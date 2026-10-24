@@ -154,6 +154,17 @@
     fitView();
   }
   window.addEventListener('resize', resize);
+  document.addEventListener('fullscreenchange', resize);
+
+  /* 手機橫放:按「開始」的同一次點擊順便進入全螢幕;不支援或被拒絕就照常玩,不提示 */
+  var landscapeTouch = window.matchMedia('(pointer: coarse) and (orientation: landscape)');
+  function goFullscreen() {
+    if (!landscapeTouch.matches || document.fullscreenElement) return;
+    try {
+      var p = document.documentElement.requestFullscreen();
+      if (p && p.catch) p.catch(function () {});
+    } catch (e) {}
+  }
 
   /* ───────── 燈光 ───────── */
   scene.add(new THREE.HemisphereLight(0xcfd8ff, 0x3a3f55, 1.05));
@@ -938,7 +949,10 @@
 
   CR.start = function (name) {
     resize();
-    for (var k in CR.modes) if (CR.modes[k].init) CR.modes[k].init();
+    for (var k in CR.modes) {
+      if (CR.modes[k].init) CR.modes[k].init();
+      el(CR.modes[k].startBtnId).addEventListener('click', goFullscreen);
+    }
     enter(name, false);
     requestAnimationFrame(frame);
   };
