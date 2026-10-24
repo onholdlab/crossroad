@@ -107,6 +107,8 @@ body { background: var(--ink); color: var(--paper); font-family: var(--body); }
 .panel h1.bad { color: var(--stop); }
 .panel p { margin: 0; font-size: 15px; line-height: 1.7; color: #d7dbea; max-width: 40ch; }
 .panel p.small { font-size: 13px; color: var(--muted); }
+/* 觸控多人的操作說明:金色(同金色路人)、放大、加粗;深色底確保背後是亮斑馬線時對比仍 ≥4.5 */
+.panel p.small.multi { font-size: 17px; font-weight: 700; color: #ffc400; background: rgba(13, 16, 32, 0.85); border-radius: 8px; padding: 6px 10px; }
 .rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; color: #d7dbea; }
 .rules li { display: grid; grid-template-columns: 14px 1fr; gap: 10px; align-items: start; line-height: 1.55; }
 .rules i { width: 10px; height: 10px; border-radius: 50%; margin-top: 7px; }
