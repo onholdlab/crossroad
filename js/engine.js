@@ -687,7 +687,7 @@
     var M = CR.modes[name], old = CR.mode;
     if (push) {
       /* file:// 下 Chrome 不允許 pushState 到別的路徑,改成一般跳轉 */
-      try { history.pushState({ mode: name }, '', '../' + name + '/'); }
+      try { history.pushState({ mode: name, depth: 1 }, '', '../' + name + '/'); }
       catch (e) { location.href = '../' + name + '/index.html'; return; }
     }
     timers.forEach(clearTimeout); timers = [];
@@ -716,8 +716,17 @@
     if (old) { try { el(M.startBtnId).focus({ preventScroll: true }); } catch (e) {} }
   }
   CR.enter = enter;
-  swBtn.addEventListener('click', function () { enter(otherMode(), true); });
+  /* 紀錄最多只比進站時多一層:目前這筆是切換疊上來的(depth 1),上一筆就是對方模式,直接退回去。
+     history.state 會跟著重新整理保留。 */
+  var goingBack = false;
+  swBtn.addEventListener('click', function () {
+    if (goingBack) return;
+    var s = history.state;
+    if (s && s.depth === 1 && s.mode === CR.mode.name) { goingBack = true; history.back(); return; }
+    enter(otherMode(), true);
+  });
   window.addEventListener('popstate', function () {
+    goingBack = false;
     var m = modeFromUrl();
     if (m && (m !== CR.mode.name || inRound())) enter(m, false);
   });
