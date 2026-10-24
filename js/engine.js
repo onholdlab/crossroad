@@ -44,7 +44,8 @@
       document.title = M.title;
       M.startOv.hidden = false;
       M.startOv.querySelector('p').innerHTML = '<span class="err">三維引擎沒有載入成功,請重新整理頁面。</span>';
-      el(M.startBtnId).hidden = true;
+      /* 只留標題與錯誤訊息:用不到的選項與排行榜字樣都不顯示 */
+      M.startOv.querySelectorAll('.panel > :not(h1):not(p)').forEach(function (n) { n.hidden = true; });
       el('swBtn').hidden = true;
       return;
     }
@@ -584,6 +585,8 @@
     if (tag === 'INPUT') return;
     /* 選單上的按鈕要能用空白鍵按;回合中則一律攔下,避免誤按到返回鍵 */
     if (MOVE_KEYS[e.code] || (e.code === 'Space' && (tag !== 'BUTTON' || inRound()))) e.preventDefault();
+    /* 按住 Enter 的自動重複不可算成返回鍵的第二次按下 */
+    if (e.code === 'Enter' && e.repeat && inRound()) { e.preventDefault(); return; }
     keys[e.code] = true;
     var M = CR.mode;
     if (tag === 'BUTTON' && !MOVE_KEYS[e.code]) return;
