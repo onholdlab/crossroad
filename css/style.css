@@ -31,6 +31,8 @@ body { background: var(--ink); color: var(--paper); font-family: var(--body); }
 
 .hud { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: flex-start; gap: 8px;
   padding-top: max(14px, var(--safe-t)); padding-bottom: 14px; padding-left: max(16px, var(--safe-l)); padding-right: max(16px, var(--safe-r)); }
+/* 撞人賽選單/結算時收起 HUD 卡片;返回鍵仍可顯示待確認狀態 */
+.hud.idle .card, .hud.idle .scores { visibility: hidden; }
 .hud-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .hud-left { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); min-width: 0; }
@@ -78,6 +80,9 @@ body { background: var(--ink); color: var(--paper); font-family: var(--body); }
 .foot { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: flex-end; pointer-events: none;
   padding-top: 12px; padding-bottom: max(12px, var(--safe-b)); padding-left: max(16px, var(--safe-l)); padding-right: calc(max(16px, var(--safe-r)) + 56px); }
 .hint { font-size: 12px; color: var(--muted); background: var(--card); border-radius: 8px; padding: 6px 10px; transition: opacity 0.6s; }
+.hint .hi { display: inline-flex; align-items: center; gap: 2px; font: 18px/1 var(--display); color: var(--paper); white-space: nowrap; }
+.hint .hi + .hi { margin-left: 10px; }
+.hint .ped { width: 20px; height: 22px; }
 
 /* 右下角:切換按鈕疊在音效按鈕正上方 */
 .corner { position: absolute; right: max(16px, var(--safe-r)); bottom: max(12px, var(--safe-b)); display: flex; flex-direction: column; align-items: flex-end; gap: 16px; }
@@ -86,7 +91,7 @@ body { background: var(--ink); color: var(--paper); font-family: var(--body); }
 .snd[aria-pressed="true"] .off, .snd[aria-pressed="false"] .on { display: none; }
 .sw { min-height: 44px; padding: 0 16px; font: 700 15px var(--body); letter-spacing: 0.08em; color: var(--paper); background: transparent; border: 1px solid rgba(255, 255, 255, 0.55); border-radius: 10px; cursor: pointer; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
 .sw:hover { background: rgba(255, 255, 255, 0.08); }
-.back { transition: background 0.15s, border-color 0.15s; }
+.back { position: relative; z-index: 1; transition: background 0.15s, border-color 0.15s; }
 .back.arm { background: var(--stop); border-color: #fff; color: #fff; }
 .icon:focus-visible, .sw:focus-visible, .btn:focus-visible { outline: 2px solid var(--player); outline-offset: 3px; }
 

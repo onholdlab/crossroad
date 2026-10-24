@@ -43,7 +43,7 @@
   M.enter = function () {
     elapsed = 0; redCount = 0;
     addPlayer();
-    el('hud').hidden = false;
+    el('hud').classList.remove('idle');
     el('tLabel').textContent = '存活時間';
     el('t').textContent = '0.0';
     el('sBest').textContent = best.toFixed(1);

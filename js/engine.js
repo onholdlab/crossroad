@@ -154,6 +154,17 @@
     fitView();
   }
   window.addEventListener('resize', resize);
+  document.addEventListener('fullscreenchange', resize);
+
+  /* 手機橫放:按「開始」的同一次點擊順便進入全螢幕;不支援或被拒絕就照常玩,不提示 */
+  var landscapeTouch = window.matchMedia('(pointer: coarse) and (orientation: landscape)');
+  function goFullscreen() {
+    if (!landscapeTouch.matches || document.fullscreenElement) return;
+    try {
+      var p = document.documentElement.requestFullscreen();
+      if (p && p.catch) p.catch(function () {});
+    } catch (e) {}
+  }
 
   /* ───────── 燈光 ───────── */
   scene.add(new THREE.HemisphereLight(0xcfd8ff, 0x3a3f55, 1.05));
@@ -680,14 +691,28 @@
   }
 
   /* ───────── 返回鍵:回合中連按兩次(2 秒內)才放棄這一局 ───────── */
-  var backBtn = el('backBtn'), armTimer = 0;
-  function disarm() { clearTimeout(armTimer); armTimer = 0; backBtn.classList.remove('arm'); }
+  var backBtn = el('backBtn'), armTimer = 0, sysArmed = false;
+  function arm() { backBtn.classList.add('arm'); armTimer = setTimeout(disarm, 2000); }
+  function disarm() { clearTimeout(armTimer); armTimer = 0; sysArmed = false; backBtn.classList.remove('arm'); }
   backBtn.addEventListener('click', function () {
     if (!inRound()) return;
-    if (!armTimer) { backBtn.classList.add('arm'); armTimer = setTimeout(disarm, 2000); return; }
+    if (!armTimer) { arm(); return; }
     disarm();
     enter(CR.mode.name, false);
   });
+
+  /* ───────── 手機系統返回:會離開網站的那一次,改用上面同一套兩下確認 ─────────
+     觸控裝置在使用者操作後,於進站那筆紀錄(depth 0)上疊一筆同網址的攔截紀錄(guard)。
+     系統返回先退到 guard 底下 → 返回鍵進入待確認;時間窗內再返回一次才真的離開。
+     只在使用者操作時才疊,因為 Chrome 返回時會跳過沒有使用者操作所建立的紀錄。 */
+  var coarse = window.matchMedia('(pointer: coarse)');
+  var onGuard = !!(history.state && history.state.guard);
+  function addGuard() {
+    var s = history.state;
+    if (!coarse.matches || onGuard || armTimer || (s && s.depth === 1)) return;
+    try { history.pushState({ mode: CR.mode.name, depth: 0, guard: true }, '', location.href); onGuard = true; } catch (e) {}
+  }
+  document.addEventListener('pointerup', addGuard, true);
 
   /* ───────── 模式切換 ───────── */
   var swBtn = el('swBtn');
@@ -722,7 +747,11 @@
     el('sigLabel').textContent = '綠燈 · 人潮湧入';
     el('sigT').textContent = String(GREEN);
     el('sigBar').style.transform = 'scaleX(1)';
-    el('hint').textContent = M.hint; el('hint').style.opacity = 1;
+    var hint = el('hint');
+    /* 圖示版說明:畫面只顯示圖示與數字,完整句子留給 aria-label */
+    if (M.hintHtml) { hint.innerHTML = M.hintHtml; hint.setAttribute('role', 'img'); hint.setAttribute('aria-label', M.hint); }
+    else { hint.textContent = M.hint; hint.removeAttribute('role'); hint.removeAttribute('aria-label'); }
+    hint.style.opacity = 1;
     M.overShown = false;
     M.enter();
     M.startOv.hidden = false;
@@ -741,7 +770,15 @@
   });
   window.addEventListener('popstate', function () {
     goingBack = false;
-    var m = modeFromUrl();
+    var s = history.state, m = modeFromUrl();
+    if (onGuard && !(s && s.guard) && m === CR.mode.name) {
+      /* 從攔截紀錄退下來:這次返回原本會離開網站 */
+      onGuard = false;
+      if (armTimer) { disarm(); history.back(); }
+      else { arm(); sysArmed = true; }
+      return;
+    }
+    onGuard = !!(s && s.guard);
     if (m && (m !== CR.mode.name || inRound())) enter(m, false);
   });
 
@@ -891,7 +928,8 @@
 
     /* 返回鍵只在回合中出現,切換按鈕只在起始/結算畫面出現 */
     var round = inRound();
-    if (backBtn.hidden === round) { backBtn.hidden = !round; if (!round) disarm(); }
+    var showBack = round || sysArmed;   // 系統返回待確認時,選單上也顯示返回鍵
+    if (backBtn.hidden === showBack) { backBtn.hidden = !showBack; if (!showBack) disarm(); }
     var menu = !M.startOv.hidden || !M.overOv.hidden;
     if (swBtn.hidden === menu) swBtn.hidden = !menu;
 
@@ -934,7 +972,10 @@
 
   CR.start = function (name) {
     resize();
-    for (var k in CR.modes) if (CR.modes[k].init) CR.modes[k].init();
+    for (var k in CR.modes) {
+      if (CR.modes[k].init) CR.modes[k].init();
+      el(CR.modes[k].startBtnId).addEventListener('click', goFullscreen);
+    }
     enter(name, false);
     requestAnimationFrame(frame);
   };

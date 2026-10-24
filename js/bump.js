@@ -22,9 +22,19 @@
     [[-4, 3], [4, 3], [-4, -3], [4, -3]]
   ];
 
+  /* 說明用的路人小圖:比例與顏色照遊戲內的人物(腿 #23252e、膚色 #f1c9a5;金色路人身體 #ffc400 並發光) */
+  function pedIcon(torso, gold) {
+    return '<svg class="ped" viewBox="-4 -2 20 22" aria-hidden="true">' +
+      (gold ? '<circle cx="6" cy="9" r="9" fill="#ffc400" opacity="0.35"/>' : '') +
+      '<path d="M3.9 13h4.2l.1 5H3.8z" fill="#23252e"/>' +
+      '<path d="M3.5 5.2h5l.4 7.8H3.1z" fill="' + torso + '"/>' +
+      '<circle cx="6" cy="3.3" r="2" fill="#f1c9a5"/></svg>';
+  }
+
   var M = {
     title: '十字路口撞人賽', short: '撞人賽',
     hint: '撞倒路人得分,金色路人算 3 分',
+    hintHtml: '<span class="hi">' + pedIcon('#c9ccd6') + '+1</span><span class="hi">' + pedIcon('#ffc400', true) + '+3</span>',
     SPEED: 5.8, ACCEL: 40, HIT_R: 0.62, MAX_PEDS: 140,
     coast: true, startOnMove: false,
     startId: 'bStart', overId: 'bOver', startBtnId: 'bStartBtn',
@@ -163,7 +173,7 @@
   };
 
   M.enter = function () {
-    el('hud').hidden = true;
+    el('hud').classList.add('idle');
     el('tLabel').textContent = '剩餘時間';
     el('t').textContent = String(ROUND);
     syncMenu();
@@ -175,7 +185,7 @@
     CR.clearSticks();
     el('bOver').hidden = true;
     el('bStart').hidden = false;
-    el('hud').hidden = true;
+    el('hud').classList.add('idle');
     el('rest').hidden = true;
     el('cd').hidden = true;
     syncMenu();
@@ -213,7 +223,7 @@
     CR.state = 'countdown';
     el('bStart').hidden = true;
     el('bOver').hidden = true;
-    el('hud').hidden = false;
+    el('hud').classList.remove('idle');
     el('t').textContent = String(ROUND);
     el('timeCard').classList.remove('low');
     var h = el('hint');
@@ -345,7 +355,7 @@
       M.overShown = true;
       renderBoards();
       el('bOver').hidden = false;
-      el('hud').hidden = true;
+      el('hud').classList.add('idle');
       el('rest').hidden = true;
       CR.clearSticks();
       try { el('bAgain').focus({ preventScroll: true }); } catch (e) {}
