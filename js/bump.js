@@ -135,7 +135,9 @@
     var parts = [];
     for (var i = 0; i < nSel; i++) parts.push(PCOL[i].name + ' ' + (nSel === 1 ? 'WASD 或方向鍵' : PCOL[i].label));
     var touch = nSel === 1 ? '手機:在畫面上拖曳。' : '手機:畫面分成 ' + nSel + ' 個區塊,各自拖曳。';
-    el('ctrlHint').textContent = '電腦:' + parts.join(' · ') + '。' + touch;
+    el('ctrlHint').textContent = nSel > 1 && window.matchMedia('(pointer: coarse)').matches
+      ? '多人模式:手機歡迎橫放遊玩。畫面分成 ' + nSel + ' 個區塊,各自拖曳。'
+      : '電腦:' + parts.join(' · ') + '。' + touch;
   }
 
   M.init = function () {
