@@ -138,4 +138,21 @@ input#nick { font: 500 16px var(--body); color: var(--paper); background: rgba(2
   .signal { min-width: 0; column-gap: 8px; }
   .hud .label { letter-spacing: 0.04em; }
 }
+/* 橫放手機:HUD 收到左右兩欄,中間留給放大的路口(engine.js 的 fitView 依 --side-col 計算) */
+@media (orientation: landscape) and (max-height: 500px) {
+  .hud { --side-col: 116px; padding-top: max(10px, var(--safe-t)); padding-bottom: max(10px, var(--safe-b)); }
+  .hud-left { flex-direction: column; gap: 6px; }
+  .card { padding: 6px 10px; }
+  .num { font-size: 28px; }
+  .num small { font-size: 12px; }
+  .signal { min-width: 0; column-gap: 8px; }
+  .signal .label { display: none; }
+  .lamps { gap: 4px; padding: 4px; }
+  .lamp { width: 11px; height: 11px; }
+  .bar { margin-top: 6px; }
+  .scores { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .sc { padding: 4px 10px; }
+  .sc b { font-size: 22px; }
+  .hint { max-width: 90px; }
+}
 .verdict { font-size: 20px !important; font-weight: 900; color: var(--player) !important; }

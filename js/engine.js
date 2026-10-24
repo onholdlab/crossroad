@@ -113,20 +113,34 @@
     return hwTab[a] + (hwTab[a + 1] - hwTab[a]) * (i - a);
   }
   /* 依螢幕比例把相機拉近,讓方形路口盡量填滿畫面(手機直式會放得更大) */
-  function fitView() {
+  /* 路口在螢幕上可佔的範圍(NDC):左右半寬 wxMax、上緣 yTopMax、下緣 -yBotMax */
+  function fitFactor(wxMax, yTopMax, yBotMax) {
     var f = 1.2;
     for (var it = 0; it < 7; it++) {
       placeCam(f);
       var wx = Math.max(Math.abs(ndc(BOX, 0, BOX).x), Math.abs(ndc(BOX, 0, -BOX).x));
       var yTop = ndc(0, 0, -BOX).y, yBot = ndc(0, 0, BOX).y;
-      f = clamp(Math.max(f * wx / 0.9, f * Math.max(yTop / 0.55, -yBot / 0.62)), 0.7, 3);
+      f = clamp(Math.max(f * wx / wxMax, f * Math.max(yTop / yTopMax, -yBot / yBotMax)), 0.5, 3);
     }
-    camFactor = f;
+    return f;
+  }
+  /* 橫放矮螢幕:HUD 收到左右兩欄(欄寬是 style.css 的 --side-col),路口改用中間的整個高度 */
+  var compactMq = window.matchMedia('(orientation: landscape) and (max-height: 500px)');
+  function fitView() {
+    var f = fitFactor(0.9, 0.55, 0.62);
+    /* 路人出生點一律用一般視野算;放大時路人從畫面外走進來,到路口的時間不變(難度不變) */
     placeCam(f);
     viewBottomZ = groundZAtNdcY(-1);
     viewTopZ = groundZAtNdcY(1);
     hwTab = [];
     for (var z = -26; z <= 12; z += 2) { var nx = ndc(1, 0, z).x; hwTab.push(nx > 1e-4 ? 1 / nx : 99); }
+    if (compactMq.matches) {
+      var cs = getComputedStyle(el('hud')), w = stage.clientWidth, h = stage.clientHeight;
+      var side = Math.max(parseFloat(cs.paddingLeft), parseFloat(cs.paddingRight)) + parseFloat(cs.getPropertyValue('--side-col'));
+      f = fitFactor(1 - 2 * side / w, 1 - 2 * parseFloat(cs.paddingTop) / h, 1 - 2 * parseFloat(cs.paddingBottom) / h);
+    }
+    camFactor = f;
+    placeCam(f);
   }
 
   function resize() {
