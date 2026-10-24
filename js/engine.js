@@ -722,7 +722,11 @@
     el('sigLabel').textContent = '綠燈 · 人潮湧入';
     el('sigT').textContent = String(GREEN);
     el('sigBar').style.transform = 'scaleX(1)';
-    el('hint').textContent = M.hint; el('hint').style.opacity = 1;
+    var hint = el('hint');
+    /* 圖示版說明:畫面只顯示圖示與數字,完整句子留給 aria-label */
+    if (M.hintHtml) { hint.innerHTML = M.hintHtml; hint.setAttribute('role', 'img'); hint.setAttribute('aria-label', M.hint); }
+    else { hint.textContent = M.hint; hint.removeAttribute('role'); hint.removeAttribute('aria-label'); }
+    hint.style.opacity = 1;
     M.overShown = false;
     M.enter();
     M.startOv.hidden = false;

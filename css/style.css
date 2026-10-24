@@ -78,6 +78,9 @@ body { background: var(--ink); color: var(--paper); font-family: var(--body); }
 .foot { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: flex-end; pointer-events: none;
   padding-top: 12px; padding-bottom: max(12px, var(--safe-b)); padding-left: max(16px, var(--safe-l)); padding-right: calc(max(16px, var(--safe-r)) + 56px); }
 .hint { font-size: 12px; color: var(--muted); background: var(--card); border-radius: 8px; padding: 6px 10px; transition: opacity 0.6s; }
+.hint .hi { display: inline-flex; align-items: center; gap: 2px; font: 18px/1 var(--display); color: var(--paper); white-space: nowrap; }
+.hint .hi + .hi { margin-left: 10px; }
+.hint .ped { width: 20px; height: 22px; }
 
 /* 右下角:切換按鈕疊在音效按鈕正上方 */
 .corner { position: absolute; right: max(16px, var(--safe-r)); bottom: max(12px, var(--safe-b)); display: flex; flex-direction: column; align-items: flex-end; gap: 16px; }
