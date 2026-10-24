@@ -173,7 +173,7 @@
   };
 
   M.enter = function () {
-    el('hud').hidden = true;
+    el('hud').classList.add('idle');
     el('tLabel').textContent = '剩餘時間';
     el('t').textContent = String(ROUND);
     syncMenu();
@@ -185,7 +185,7 @@
     CR.clearSticks();
     el('bOver').hidden = true;
     el('bStart').hidden = false;
-    el('hud').hidden = true;
+    el('hud').classList.add('idle');
     el('rest').hidden = true;
     el('cd').hidden = true;
     syncMenu();
@@ -223,7 +223,7 @@
     CR.state = 'countdown';
     el('bStart').hidden = true;
     el('bOver').hidden = true;
-    el('hud').hidden = false;
+    el('hud').classList.remove('idle');
     el('t').textContent = String(ROUND);
     el('timeCard').classList.remove('low');
     var h = el('hint');
@@ -355,7 +355,7 @@
       M.overShown = true;
       renderBoards();
       el('bOver').hidden = false;
-      el('hud').hidden = true;
+      el('hud').classList.add('idle');
       el('rest').hidden = true;
       CR.clearSticks();
       try { el('bAgain').focus({ preventScroll: true }); } catch (e) {}
