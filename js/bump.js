@@ -11,7 +11,7 @@
   var COUNTDOWN = 3;     // 開始前倒數秒數
   var PCOL = [
     { name: 'P1', css: '#ffd23f', num: 0xffd23f, label: 'WASD' },
-    { name: 'P2', css: '#3ee7ff', num: 0x3ee7ff, label: '方向鍵' },
+    { name: 'P2', css: '#3ee7ff', num: 0x3ee7ff, label: tr('方向鍵', 'Arrow keys') },
     { name: 'P3', css: '#ff5fa8', num: 0xff5fa8, label: 'IJKL' },
     { name: 'P4', css: '#ff8a3d', num: 0xff8a3d, label: 'TFGH' }
   ];
@@ -32,37 +32,37 @@
   }
 
   var M = {
-    title: '十字路口撞人賽', short: '撞人賽',
-    hint: '撞倒路人得分,金色路人算 3 分',
+    title: tr('十字路口撞人賽', 'Crossroad: Bump'), short: tr('撞人賽', 'Bump'),
+    hint: tr('撞倒路人得分,金色路人算 3 分', 'Bump people to score. Gold ones are worth 3.'),
     hintHtml: '<span class="hi">' + pedIcon('#c9ccd6') + '+1</span><span class="hi">' + pedIcon('#ffc400', true) + '+3</span>',
     SPEED: 5.8, ACCEL: 40, HIT_R: 0.62, MAX_PEDS: 140,
     coast: true, startOnMove: false,
     startId: 'bStart', overId: 'bOver', startBtnId: 'bStartBtn',
     html:
       '<div class="overlay" id="bStart" hidden><div class="panel">' +
-        '<h1>十字路口撞人賽</h1>' +
-        '<p>60 秒內,撞倒最多路人的人獲勝。</p>' +
+        '<h1>' + tr('十字路口撞人賽', 'Crossroad: Bump') + '</h1>' +
+        '<p>' + tr('60 秒內,撞倒最多路人的人獲勝。', 'Most people knocked down in 60 seconds wins.') + '</p>' +
         '<ul class="rules">' +
-          '<li><i style="background:var(--player)"></i><span>衝向路人就算撞倒,得 1 分。身體發亮的金色路人跑得快,算 3 分。</span></li>' +
-          '<li><i style="background:var(--go)"></i><span>綠燈 15 秒人潮湧入,有些人會走曲線,更難撞。</span></li>' +
-          '<li><i style="background:var(--stop)"></i><span>紅燈 3 秒大家休息,這段時間撞不到人。</span></li>' +
+          '<li><i style="background:var(--player)"></i><span>' + tr('衝向路人就算撞倒,得 1 分。身體發亮的金色路人跑得快,算 3 分。', 'Run into someone to knock them down: 1 point. Glowing gold people are fast and worth 3.') + '</span></li>' +
+          '<li><i style="background:var(--go)"></i><span>' + tr('綠燈 15 秒人潮湧入,有些人會走曲線,更難撞。', 'Green light, 15 s: crowds pour in. Some walk in curves and are harder to hit.') + '</span></li>' +
+          '<li><i style="background:var(--stop)"></i><span>' + tr('紅燈 3 秒大家休息,這段時間撞不到人。', 'Red light, 3 s: everyone rests. No knockdowns during it.') + '</span></li>' +
         '</ul>' +
-        '<div class="field"><span class="label">人數</span><div class="seg" id="seg">' +
-          '<button type="button" data-n="1">' + (BOARD_ENABLED ? '單人 · 上排行榜' : '單人') + '</button>' +
-          '<button type="button" data-n="2">2 人</button><button type="button" data-n="3">3 人</button><button type="button" data-n="4">4 人</button>' +
+        '<div class="field"><span class="label">' + tr('人數', 'Players') + '</span><div class="seg" id="seg">' +
+          '<button type="button" data-n="1">' + (BOARD_ENABLED ? tr('單人 · 上排行榜', 'Solo · leaderboard') : tr('單人', 'Solo')) + '</button>' +
+          '<button type="button" data-n="2">' + tr('2 人', '2P') + '</button><button type="button" data-n="3">' + tr('3 人', '3P') + '</button><button type="button" data-n="4">' + tr('4 人', '4P') + '</button>' +
         '</div></div>' +
-        '<div class="field" id="nickField"><label class="label" for="nick">暱稱(排行榜上顯示)</label>' +
+        '<div class="field" id="nickField"><label class="label" for="nick">' + tr('暱稱(排行榜上顯示)', 'Nickname (shown on the leaderboard)') + '</label>' +
           '<input id="nick" maxlength="12" autocomplete="off" spellcheck="false"></div>' +
         '<p class="small" id="ctrlHint"></p>' +
-        '<button class="btn" id="bStartBtn" type="button">開始</button>' +
-        '<section class="board" id="boardMenuWrap"><div class="label">單人排行榜</div><ol id="boardMenu"></ol></section>' +
+        '<button class="btn" id="bStartBtn" type="button">' + tr('開始', 'Start') + '</button>' +
+        '<section class="board" id="boardMenuWrap"><div class="label">' + tr('單人排行榜', 'Solo leaderboard') + '</div><ol id="boardMenu"></ol></section>' +
       '</div></div>' +
       '<div class="overlay" id="bOver" hidden><div class="panel">' +
-        '<h1>時間到</h1>' +
-        '<div id="soloRes"><div class="label">你撞倒了</div><div class="big"><span id="finalN">0</span><small>人</small></div><p id="upMsg" class="small"></p></div>' +
+        '<h1>' + tr('時間到', 'Time\'s up') + '</h1>' +
+        '<div id="soloRes"><div class="label">' + tr('你撞倒了', 'You knocked down') + '</div><div class="big"><span id="finalN">0</span>' + tr('<small>人</small>', '<small>people</small>') + '</div><p id="upMsg" class="small"></p></div>' +
         '<div id="multiRes" hidden><p class="verdict" id="verdict"></p><ol class="rank" id="rankList"></ol></div>' +
-        '<div class="btns"><button class="btn" id="bAgain" type="button">再來一次</button><button class="btn ghost" id="bMenu" type="button">回選單</button></div>' +
-        '<section class="board" id="boardOverWrap"><div class="label">單人排行榜</div><ol id="boardOver"></ol></section>' +
+        '<div class="btns"><button class="btn" id="bAgain" type="button">' + tr('再來一次', 'Play again') + '</button><button class="btn ghost" id="bMenu" type="button">' + tr('回選單', 'Menu') + '</button></div>' +
+        '<section class="board" id="boardOverWrap"><div class="label">' + tr('單人排行榜', 'Solo leaderboard') + '</div><ol id="boardOver"></ol><a class="priv" href="https://onholdlab.github.io/privacy/" target="_blank" rel="noopener">' + tr('排行榜會公開暱稱與分數 · 隱私權政策', 'Nicknames and scores are public · Privacy policy') + '</a></section>' +
       '</div></div>'
   };
 
@@ -91,13 +91,13 @@
     });
     el('nickField').hidden = !BOARD_ENABLED || nSel !== 1;
     var parts = [];
-    for (var i = 0; i < nSel; i++) parts.push(PCOL[i].name + ' ' + (nSel === 1 ? 'WASD 或方向鍵' : PCOL[i].label));
-    var touch = nSel === 1 ? '手機:在畫面上拖曳。' : '手機:畫面分成 ' + nSel + ' 個區塊,各自拖曳。';
+    for (var i = 0; i < nSel; i++) parts.push(PCOL[i].name + ' ' + (nSel === 1 ? tr('WASD 或方向鍵', 'WASD or arrow keys') : PCOL[i].label));
+    var touch = nSel === 1 ? tr('手機:在畫面上拖曳。', 'Phone: drag on the screen.') : tr('手機:畫面分成 ', 'Phone: the screen splits into ') + nSel + tr(' 個區塊,各自拖曳。', ' zones, one per player.');
     var multiTouch = nSel > 1 && window.matchMedia('(pointer: coarse)').matches;
     el('ctrlHint').classList.toggle('multi', multiTouch);
     el('ctrlHint').textContent = multiTouch
-      ? '多人模式:手機歡迎橫放遊玩。畫面分成 ' + nSel + ' 個區塊,各自拖曳。'
-      : '電腦:' + parts.join(' · ') + '。' + touch;
+      ? tr('多人模式:手機歡迎橫放遊玩。畫面分成 ', 'Multiplayer: try your phone sideways. The screen splits into ') + nSel + tr(' 個區塊,各自拖曳。', ' zones, one per player.')
+      : tr('電腦:', 'Keyboard: ') + parts.join(' · ') + tr('。', '. ') + touch;
   }
 
   M.init = function () {
@@ -123,7 +123,7 @@
 
   M.enter = function () {
     el('hud').classList.add('idle');
-    el('tLabel').textContent = '剩餘時間';
+    el('tLabel').textContent = tr('剩餘時間', 'Time left');
     el('t').textContent = String(ROUND);
     if (nickEl) nickEl.value = CR.board.getNick();
     syncMenu();
@@ -149,7 +149,7 @@
     CR.players.forEach(function (p) {
       var d = document.createElement('div'); d.className = 'sc';
       d.style.setProperty('--c', PCOL[p.i].css);
-      var s = document.createElement('span'); s.className = 'sn'; s.textContent = CR.players.length === 1 ? '撞倒' : PCOL[p.i].name;
+      var s = document.createElement('span'); s.className = 'sn'; s.textContent = CR.players.length === 1 ? tr('撞倒', 'Hits') : PCOL[p.i].name;
       var b = document.createElement('b'); b.textContent = '0';
       d.appendChild(s); d.appendChild(b); box.appendChild(d);
       p.scoreEl = b; p.shown = 0;
@@ -225,25 +225,25 @@
       var localBest = 0, isBest = false;
       try { localBest = parseFloat(localStorage.getItem('bump-best')) || 0; if (sc > localBest) { localBest = sc; isBest = true; localStorage.setItem('bump-best', String(sc)); } } catch (e) {}
       if (!BOARD_ENABLED) {
-        up.textContent = (isBest ? '新的個人最佳!' : '') + '這台裝置的最佳是 ' + localBest + ' 人。';
+        up.textContent = (isBest ? tr('新的個人最佳!', 'New personal best! ') : '') + tr('這台裝置的最佳是 ', 'Best on this device: ') + localBest + tr(' 人。', '.');
         return;
       }
       var nick = CR.board.cleanNick(nickEl.value);
-      if (sc <= 0) { up.textContent = '撞倒 1 人以上才會記入排行榜。'; renderBoards(); return; }
-      up.textContent = '上傳成績中…';
+      if (sc <= 0) { up.textContent = tr('撞倒 1 人以上才會記入排行榜。', 'Knock down at least 1 person to make the leaderboard.'); renderBoards(); return; }
+      up.textContent = tr('上傳成績中…', 'Uploading score…');
       CR.board.submit('bump', nick, sc).then(function (r) {
-        if (!r.ok) { up.textContent = '目前連不上排行榜。這台裝置的最佳是 ' + localBest + ' 人。'; return; }
+        if (!r.ok) { up.textContent = tr('目前連不上排行榜。這台裝置的最佳是 ', 'Can\'t reach the leaderboard. Best on this device: ') + localBest + tr(' 人。', '.'); return; }
         return refreshBoard().then(function (res) {
           var pos = 0;
           if (res && res.ok) res.rows.forEach(function (x, i) { if (x.me && !pos) pos = i + 1; });
-          up.textContent = (isBest ? '新的個人最佳!' : '') + (pos ? '你在排行榜第 ' + pos + ' 名。' : '這次還沒擠進前 ' + CR.board.SPOTS + ' 名。');
+          up.textContent = (isBest ? tr('新的個人最佳!', 'New personal best! ') : '') + (pos ? tr('你在排行榜第 ', 'You\'re #') + pos + tr(' 名。', ' on the leaderboard.') : tr('這次還沒擠進前 ', 'Not in the top ') + CR.board.SPOTS + tr(' 名。', ' on the leaderboard.'));
         });
       });
     } else {
       var sorted = players.slice().sort(function (a, b) { return b.score - a.score; });
       var top = sorted[0].score;
       var winners = sorted.filter(function (p) { return p.score === top; });
-      el('verdict').textContent = winners.length > 1 ? '平手!' : PCOL[winners[0].i].name + ' 獲勝!';
+      el('verdict').textContent = winners.length > 1 ? tr('平手!', 'It\'s a tie!') : PCOL[winners[0].i].name + tr(' 獲勝!', ' wins!');
       var ol = el('rankList');
       ol.textContent = '';
       sorted.forEach(function (p, i) {
@@ -252,7 +252,7 @@
         if (p.score === top) li.className = 'win';
         var a = document.createElement('span'); a.textContent = String(i + 1);
         var b = document.createElement('span'); b.textContent = PCOL[p.i].name;
-        if (p.score === top) { var em = document.createElement('em'); em.textContent = winners.length > 1 ? '平手' : '冠軍'; b.appendChild(em); }
+        if (p.score === top) { var em = document.createElement('em'); em.textContent = winners.length > 1 ? tr('平手', 'Tie') : tr('冠軍', 'Winner'); b.appendChild(em); }
         var c = document.createElement('b'); c.textContent = String(p.score);
         li.appendChild(a); li.appendChild(b); li.appendChild(c);
         ol.appendChild(li);

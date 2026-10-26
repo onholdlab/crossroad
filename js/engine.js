@@ -17,18 +17,18 @@
     '<canvas id="blur" class="layer"></canvas><div class="vignette"></div><div class="flash" id="flash"></div>' +
     '<div class="zones" id="zones"></div><div class="pops" id="pops"></div>' +
     '<div class="hud" id="hud"><div class="hud-row">' +
-      '<div class="hud-left"><button class="icon back" id="backBtn" type="button" aria-label="返回" hidden>' + ICON_BACK + '</button>' +
-        '<div class="card time" id="timeCard"><div class="label" id="tLabel"></div><div class="num"><span id="t"></span><small>秒</small></div></div></div>' +
+      '<div class="hud-left"><button class="icon back" id="backBtn" type="button" aria-label="' + tr('返回', 'Back') + '" hidden>' + ICON_BACK + '</button>' +
+        '<div class="card time" id="timeCard"><div class="label" id="tLabel"></div><div class="num"><span id="t"></span><small>' + tr('秒', 's') + '</small></div></div></div>' +
       '<div class="card signal" id="signal" data-state="green"><div class="lamps"><i class="lamp r"></i><i class="lamp g"></i></div>' +
-        '<div><div class="label" id="sigLabel">綠燈 · 人潮湧入</div><div class="num"><span id="sigT">15</span><small>秒</small></div></div>' +
+        '<div><div class="label" id="sigLabel">' + tr('綠燈 · 人潮湧入', 'Green · crowd incoming') + '</div><div class="num"><span id="sigT">15</span><small>' + tr('秒', 's') + '</small></div></div>' +
         '<div class="bar"><b id="sigBar"></b></div></div>' +
     '</div><div class="scores" id="scores"></div></div>' +
-    '<div class="rest" id="rest" hidden><span>紅燈休息<b id="restT">3</b></span></div>' +
+    '<div class="rest" id="rest" hidden><span>' + tr('紅燈休息', 'Red light · rest') + '<b id="restT">3</b></span></div>' +
     '<div class="cd" id="cd" hidden></div>' +
     '<div class="foot"><div class="hint" id="hint"></div></div>' +
     '<div id="sticks"></div>' +
-    '<div class="corner" id="corner"><button class="sw" id="swBtn" type="button"></button>' +
-      '<button class="icon snd" id="snd" type="button" aria-label="音效" aria-pressed="true">' + ICON_SND + '</button></div>' +
+    '<div class="corner" id="corner"><button class="sw" id="langBtn" type="button" lang="' + tr('en', 'zh-Hant') + '">' + tr('English', '中文') + '</button><button class="sw" id="swBtn" type="button"></button>' +
+      '<button class="icon snd" id="snd" type="button" aria-label="' + tr('音效', 'Sound') + '" aria-pressed="true">' + ICON_SND + '</button></div>' +
     '</div>');
 
   CR.register = function (name, M) {
@@ -43,10 +43,11 @@
       var M = CR.modes[name];
       document.title = M.title;
       M.startOv.hidden = false;
-      M.startOv.querySelector('p').innerHTML = '<span class="err">三維引擎沒有載入成功,請重新整理頁面。</span>';
+      M.startOv.querySelector('p').innerHTML = '<span class="err">' + tr('三維引擎沒有載入成功,請重新整理頁面。', 'The 3D engine failed to load. Please refresh the page.') + '</span>';
       /* 只留標題與錯誤訊息:用不到的選項與排行榜字樣都不顯示 */
       M.startOv.querySelectorAll('.panel > :not(h1):not(p)').forEach(function (n) { n.hidden = true; });
       el('swBtn').hidden = true;
+      el('langBtn').hidden = true;
       return;
     }
     CR.start(name);
@@ -716,6 +717,8 @@
 
   /* ───────── 模式切換 ───────── */
   var swBtn = el('swBtn');
+  var langBtn = el('langBtn');
+  langBtn.addEventListener('click', function () { OHL_setLang(OHL_LANG === 'en' ? 'zh' : 'en'); });
   function otherMode() { for (var k in CR.modes) if (k !== CR.mode.name) return k; }
   function modeFromUrl() {
     var seg = location.pathname.split('/');
@@ -745,7 +748,7 @@
     el('scores').textContent = '';
     el('timeCard').classList.remove('low');
     el('signal').dataset.state = 'green';
-    el('sigLabel').textContent = '綠燈 · 人潮湧入';
+    el('sigLabel').textContent = tr('綠燈 · 人潮湧入', 'Green · crowd incoming');
     el('sigT').textContent = String(GREEN);
     el('sigBar').style.transform = 'scaleX(1)';
     var hint = el('hint');
@@ -921,7 +924,7 @@
       hudSigT.textContent = String(Math.ceil(left));
       hudBar.style.transform = 'scaleX(' + (left / (CR.phase === 'red' ? RED : GREEN)).toFixed(3) + ')';
       sigCard.dataset.state = uiState;
-      hudLabel.textContent = uiState === 'red' ? '紅燈 · 休息中' : (uiState === 'warn' ? '快變紅燈' : '綠燈 · 人潮湧入');
+      hudLabel.textContent = uiState === 'red' ? tr('紅燈 · 休息中', 'Red · resting') : (uiState === 'warn' ? tr('快變紅燈', 'Turning red') : tr('綠燈 · 人潮湧入', 'Green · crowd incoming'));
       var showRest = CR.phase === 'red' && CR.state === 'play';
       if (rest.hidden === showRest) rest.hidden = !showRest;
       if (showRest) restT.textContent = String(Math.ceil(left));
@@ -933,6 +936,7 @@
     if (backBtn.hidden === showBack) { backBtn.hidden = !showBack; if (!showBack) disarm(); }
     var menu = !M.startOv.hidden || !M.overOv.hidden;
     if (swBtn.hidden === menu) swBtn.hidden = !menu;
+    if (langBtn.hidden === menu) langBtn.hidden = !menu;
 
     /* 相機 */
     CR.shake *= Math.pow(0.02, dt);

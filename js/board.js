@@ -38,10 +38,10 @@
   function getNick() {
     var n = '';
     try { n = localStorage.getItem('cr-nick') || localStorage.getItem('bump-nick') || ''; } catch (e) {}
-    return n || '玩家' + (100 + ((Math.random() * 900) | 0));
+    return n || tr('玩家', 'Player') + (100 + ((Math.random() * 900) | 0));
   }
   function setNick(n) { try { localStorage.setItem('cr-nick', String(n).trim()); } catch (e) {} }
-  function cleanNick(n) { return (String(n || '').trim() || '玩家').slice(0, 12); }
+  function cleanNick(n) { return (String(n || '').trim() || tr('玩家', 'Player')).slice(0, 12); }
 
   function load(game) {
     var to = timeout(8000);
@@ -70,9 +70,9 @@
   function render(ol, res, fmt) {
     ol.textContent = '';
     var msg = null;
-    if (!res) msg = '讀取中…';
-    else if (!res.ok) msg = '目前連不上排行榜。';
-    else if (!res.rows.length) msg = '還沒有人上榜,成為第一個!';
+    if (!res) msg = tr('讀取中…', 'Loading…');
+    else if (!res.ok) msg = tr('目前連不上排行榜。', 'Can\'t reach the leaderboard right now.');
+    else if (!res.rows.length) msg = tr('還沒有人上榜,成為第一個!', 'No one on the board yet. Be the first!');
     if (msg) {
       var m = document.createElement('li'); m.className = 'msg'; m.textContent = msg; ol.appendChild(m);
       return;
@@ -81,7 +81,7 @@
       var li = document.createElement('li');
       if (r.me) li.className = 'me';
       var a = document.createElement('span'); a.textContent = String(i + 1);
-      var b = document.createElement('span'); b.textContent = cleanNick(r.name) + (r.me ? '(你)' : '');
+      var b = document.createElement('span'); b.textContent = cleanNick(r.name) + (r.me ? tr('(你)', ' (you)') : '');
       var c = document.createElement('b'); c.textContent = fmt(r.score);
       li.appendChild(a); li.appendChild(b); li.appendChild(c);
       ol.appendChild(li);
