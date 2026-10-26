@@ -174,3 +174,4 @@ input#nick, input.nick { font: 500 16px var(--body); color: var(--paper); backgr
 .friends li small { opacity: 0.65; font-size: 12px; margin-left: 6px; }
 .friends li b { font-size: 16px !important; }
 #friendsWrap { margin-top: 14px; }
+.twinsNote { color: var(--player) !important; margin: 4px 0 0 !important; }

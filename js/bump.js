@@ -53,7 +53,7 @@
         '</div></div>' +
         '<div class="field" id="nickField"><label class="label" for="nick">' + tr('暱稱(排行榜上顯示)', 'Nickname (shown on the leaderboard)') + '</label>' +
           '<input id="nick" maxlength="12" autocomplete="off" spellcheck="false"></div>' +
-        '<div class="field" id="namesField" hidden><span class="label">' + tr('玩家名字(選填,取了名字就會在這台裝置記戰績)', 'Player names (optional; named players get a record on this device)') + '</span><div class="names" id="names"></div></div>' +
+        '<div class="field" id="namesField" hidden><span class="label">' + tr('玩家名字(選填,取了名字就會在這台裝置記戰績)', 'Player names (optional; named players get a record on this device)') + '</span><div class="names" id="names"></div><p class="small twinsNote" id="twinsNote" hidden>' + tr('同名的玩家會合體成雙胞胎:同一個顏色,分數加總。', 'Players with the same name become twins: same color, scores added together.') + '</p></div>' +
         '<p class="small" id="ctrlHint"></p>' +
         '<button class="btn" id="bStartBtn" type="button">' + tr('開始', 'Start') + '</button>' +
         '<section class="board" id="boardMenuWrap"><div class="label">' + tr('單人排行榜', 'Solo leaderboard') + '</div><ol id="boardMenu"></ol></section>' +
@@ -69,7 +69,7 @@
       '</div></div>'
   };
 
-  var curNames = [];
+  var curNames = [], curTeams = [];
   var timeLeft = ROUND, cdLeft = COUNTDOWN, lastCd = -1, lastT = -1, overAt = 0;
   var nSel = 1;
   try { nSel = CR.clamp(parseInt(localStorage.getItem('bump-n'), 10) || 1, 1, 4); } catch (e) {}
@@ -78,16 +78,35 @@
   var names = ['', '', '', ''];
   try { var sn = JSON.parse(localStorage.getItem('bump-names')); if (Array.isArray(sn)) for (var q = 0; q < 4; q++) names[q] = typeof sn[q] === 'string' ? sn[q].slice(0, 10) : ''; } catch (e) {}
   function saveNames() { try { localStorage.setItem('bump-names', JSON.stringify(names)); } catch (e) {} }
-  /* 回合用的顯示名:沒填用 P1~P4;同一局重名的,後面的人退回 Pn */
+  /* 回合用的名字。彩蛋:同名的玩家合體成「雙胞胎」,共用第一位的顏色、分數加總,名牌加 ①②③④。
+     curNames[i] = { name(隊名), named, team(隊伍代表的玩家編號), tag(名牌) } */
+  var CIRC = ['①', '②', '③', '④'];
   function roundNames(n) {
-    var out = [], seen = {};
+    var out = [], lead = {}, cnt = {};
     for (var i = 0; i < n; i++) {
       var nm = names[i].trim(), key = nm.toLowerCase();
-      if (!nm || seen[key]) out.push({ name: PCOL[i].name, named: false });
-      else { seen[key] = 1; out.push({ name: nm, named: true }); }
+      if (!nm) { out.push({ name: PCOL[i].name, named: false, team: i }); continue; }
+      if (lead[key] === undefined) { lead[key] = i; cnt[key] = 0; }
+      out.push({ name: out[lead[key]] ? out[lead[key]].name : nm, named: true, team: lead[key], key: key, num: cnt[key]++ });
     }
+    out.forEach(function (o) {
+      o.size = o.named ? cnt[o.key] : 1;
+      o.tag = o.size > 1 ? o.name + ' ' + CIRC[o.num] : o.name;
+    });
     return out;
   }
+  function anyTwins(n) { return roundNames(n).some(function (o) { return o.size > 1; }); }
+  /* 這一局的隊伍(沒有雙胞胎時就是每人一隊),total 是分數加總 */
+  function teamsOf(players) {
+    var t = [], by = {};
+    players.forEach(function (p) {
+      var cn = curNames[p.i], k = cn.team;
+      if (!by[k]) { by[k] = { lead: k, name: cn.name, named: cn.named, key: cn.key, size: cn.size, members: [], total: 0 }; t.push(by[k]); }
+      by[k].members.push(p); by[k].total += p.score;
+    });
+    return t;
+  }
+  function colOf(i) { return PCOL[curNames[i] ? curNames[i].team : i]; }
   function loadRec() {
     var r = null;
     try { r = JSON.parse(localStorage.getItem('bump-friends')); } catch (e) {}
@@ -116,6 +135,7 @@
     });
     el('nickField').hidden = !BOARD_ENABLED || nSel !== 1;
     el('namesField').hidden = nSel === 1;
+    el('twinsNote').hidden = nSel === 1 || !anyTwins(nSel);
     Array.prototype.forEach.call(document.querySelectorAll('#names input'), function (inp, i) { inp.parentNode.hidden = i >= nSel; });
     var parts = [];
     for (var i = 0; i < nSel; i++) parts.push(PCOL[i].name + ' ' + (nSel === 1 ? tr('WASD 或方向鍵', 'WASD or arrow keys') : PCOL[i].label));
@@ -137,7 +157,7 @@
       var t = document.createElement('span'); t.textContent = c.name;
       var inp = document.createElement('input'); inp.className = 'nick'; inp.maxLength = 10;
       inp.autocomplete = 'off'; inp.spellcheck = false; inp.placeholder = c.name; inp.value = names[i];
-      inp.addEventListener('input', function () { names[i] = inp.value; saveNames(); });
+      inp.addEventListener('input', function () { names[i] = inp.value; saveNames(); el('twinsNote').hidden = !anyTwins(nSel); });
       w.appendChild(t); w.appendChild(inp); box.appendChild(w);
     });
     segBtns.forEach(function (b) {
@@ -182,13 +202,15 @@
   function buildScoreCards() {
     var box = el('scores');
     box.textContent = '';
-    CR.players.forEach(function (p) {
+    curTeams = teamsOf(CR.players);
+    curTeams.forEach(function (t) {
       var d = document.createElement('div'); d.className = 'sc';
-      d.style.setProperty('--c', PCOL[p.i].css);
-      var s = document.createElement('span'); s.className = 'sn'; s.textContent = CR.players.length === 1 ? tr('撞倒', 'Hits') : curNames[p.i].name;
+      d.style.setProperty('--c', PCOL[t.lead].css);
+      var s = document.createElement('span'); s.className = 'sn';
+      s.textContent = CR.players.length === 1 ? tr('撞倒', 'Hits') : t.name + (t.size > 1 ? ' ×' + t.size : '');
       var b = document.createElement('b'); b.textContent = '0';
       d.appendChild(s); d.appendChild(b); box.appendChild(d);
-      p.scoreEl = b; p.shown = 0;
+      t.el = b; t.shown = 0;
     });
   }
 
@@ -200,15 +222,15 @@
     curNames = roundNames(nSel);
     if (nSel > 1) { try { if (window.goatcounter && goatcounter.count) goatcounter.count({ path: 'bump-multi-' + nSel, title: 'Bump ' + nSel + 'P', event: true }); } catch (e) {} }
     for (var i = 0; i < nSel; i++) {
-      var c = PCOL[i];
-      CR.makePlayer(pos[i][0], pos[i][1], { i: i, css: c.css, num: c.num, glow: 0.5, label: nSel > 1 ? curNames[i].name : null });
+      var c = colOf(i);
+      CR.makePlayer(pos[i][0], pos[i][1], { i: i, css: c.css, num: c.num, glow: 0.5, label: nSel > 1 ? curNames[i].tag : null });
     }
     timeLeft = ROUND; cdLeft = COUNTDOWN; lastCd = -1; lastT = -1;
     CR.resetRound(0.5);
     M.overShown = false;
     for (var k = 0; k < 14; k++) CR.spawnPed(true);
     buildScoreCards();
-    CR.buildSticks(PCOL.map(function (c) { return c.css; }), PCOL.map(function (c, i) { return curNames[i] ? curNames[i].name : c.name; }));
+    CR.buildSticks(PCOL.map(function (c, i) { return colOf(i).css; }), PCOL.map(function (c, i) { return curNames[i] ? curNames[i].tag : c.name; }));
     CR.state = 'countdown';
     el('bStart').hidden = true;
     el('bOver').hidden = true;
@@ -241,7 +263,7 @@
     p.fx = vx / l * 6; p.fz = vz / l * 6;
     var pts = p.gold ? 3 : 1;
     pl.score += pts;
-    popup(p.x, p.z, '+' + pts, PCOL[pl.i].css, p.gold);
+    popup(p.x, p.z, '+' + pts, colOf(pl.i).css, p.gold);
     CR.tone(480 + pl.i * 90, 0.09, 'triangle', 0.07);
     if (p.gold) { CR.tone(880, 0.1, 'triangle', 0.07, 0.08); CR.tone(1175, 0.14, 'triangle', 0.07, 0.16); }
     CR.shake = Math.max(CR.shake, p.gold ? 0.35 : 0.18);
@@ -278,37 +300,41 @@
         });
       });
     } else {
-      var sorted = players.slice().sort(function (a, b) { return b.score - a.score; });
-      var top = sorted[0].score;
-      var winners = sorted.filter(function (p) { return p.score === top; });
-      el('verdict').textContent = winners.length > 1 ? tr('平手!', 'It\'s a tie!') : curNames[winners[0].i].name + tr(' 獲勝!', ' wins!');
+      var teams = teamsOf(players);
+      var sorted = teams.slice().sort(function (a, b) { return b.total - a.total; });
+      var top = sorted[0].total, coop = teams.length === 1;
+      var winners = coop ? [] : sorted.filter(function (t) { return t.total === top; });
+      el('verdict').textContent = coop ? tr('雙胞胎合計 ', 'Twins total: ') + top + tr(' 人!', '!')
+        : winners.length > 1 ? tr('平手!', 'It\'s a tie!') : winners[0].name + (winners[0].size > 1 ? tr('(雙胞胎)', ' (twins)') : '') + tr(' 獲勝!', ' win' + (winners[0].size > 1 ? '!' : 's!'));
       var ol = el('rankList');
       ol.textContent = '';
-      sorted.forEach(function (p, i) {
+      sorted.forEach(function (t, i) {
         var li = document.createElement('li');
-        li.style.setProperty('--c', PCOL[p.i].css);
-        if (p.score === top) li.className = 'win';
+        li.style.setProperty('--c', PCOL[t.lead].css);
+        if (!coop && t.total === top) li.className = 'win';
         var a = document.createElement('span'); a.textContent = String(i + 1);
-        var b = document.createElement('span'); b.textContent = curNames[p.i].name;
-        if (p.score === top) { var em = document.createElement('em'); em.textContent = winners.length > 1 ? tr('平手', 'Tie') : tr('冠軍', 'Winner'); b.appendChild(em); }
-        var c = document.createElement('b'); c.textContent = String(p.score);
+        var b = document.createElement('span'); b.textContent = t.name + (t.size > 1 ? ' ×' + t.size : '');
+        if (!coop && t.total === top) { var em = document.createElement('em'); em.textContent = winners.length > 1 ? tr('平手', 'Tie') : tr('冠軍', 'Winner'); b.appendChild(em); }
+        var c = document.createElement('b'); c.textContent = String(t.total);
         li.appendChild(a); li.appendChild(b); li.appendChild(c);
         ol.appendChild(li);
       });
-      recordFriends(players, winners);
+      recordFriends(teams, winners, coop);
     }
   }
 
-  /* 有取名字的玩家記入本機戰績:局數、勝場(平手不算)、最高撞倒數 */
-  function recordFriends(players, winners) {
+  /* 有取名字的隊伍記入本機戰績:局數、勝場(平手不算)、最高撞倒數。
+     雙胞胎另外記在「名字(雙胞胎)」名下,不和個人戰績混在一起 */
+  function recordFriends(teams, winners, coop) {
     var rec = loadRec(), inRound = [];
-    players.forEach(function (p) {
-      var n = curNames[p.i];
-      if (!n.named) return;
-      var key = n.name.toLowerCase();
-      var r = rec[key] || (rec[key] = { n: n.name, g: 0, w: 0, b: 0 });
-      r.n = n.name; r.g++; r.b = Math.max(r.b, p.score);
-      if (winners.length === 1 && winners[0] === p) r.w++;
+    teams.forEach(function (t) {
+      if (!t.named) return;
+      var twin = t.size > 1, key = t.key + (twin ? '#twins' : '');
+      var r = rec[key] || (rec[key] = { n: t.name, g: 0, w: 0, b: 0 });
+      if (twin) r.t = 1;
+      if (coop && t.total > r.b && r.g > 0) el('verdict').textContent += tr(' 雙胞胎新紀錄!', ' New twins record!');
+      r.n = t.name; r.g++; r.b = Math.max(r.b, t.total);
+      if (winners.length === 1 && winners[0] === t) r.w++;
       inRound.push(key);
     });
     if (inRound.length) saveRec(rec);
@@ -322,7 +348,7 @@
       var li = document.createElement('li');
       if (inRound.indexOf(x.k) >= 0) li.className = 'me';
       var a = document.createElement('span'); a.textContent = String(i + 1);
-      var b = document.createElement('span'); b.textContent = x.r.n;
+      var b = document.createElement('span'); b.textContent = x.r.n + (x.r.t ? tr('(雙胞胎)', ' (twins)') : '');
       var sm = document.createElement('small'); sm.textContent = tr(' 最高 ', ' best ') + x.r.b + tr(' · ' + x.r.g + ' 局', ' · ' + x.r.g + (x.r.g === 1 ? ' game' : ' games'));
       b.appendChild(sm);
       var c = document.createElement('b'); c.textContent = x.r.w + tr(' 勝', x.r.w === 1 ? ' win' : ' wins');
@@ -369,8 +395,10 @@
   };
 
   M.post = function () {
-    CR.players.forEach(function (q) {
-      if (q.shown !== q.score && q.scoreEl) { q.shown = q.score; q.scoreEl.textContent = String(q.score); }
+    curTeams.forEach(function (t) {
+      var sum = 0;
+      t.members.forEach(function (q) { sum += q.score; });
+      if (t.shown !== sum && t.el) { t.shown = sum; t.el.textContent = String(sum); }
     });
     if (CR.state === 'over' && !M.overShown && performance.now() - overAt > 700) {
       M.overShown = true;
