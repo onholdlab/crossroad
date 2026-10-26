@@ -88,5 +88,13 @@
     });
   }
 
-  CR.board = { load: load, submit: submit, render: render, getNick: getNick, setNick: setNick, cleanNick: cleanNick, SPOTS: SPOTS };
+  /* 沒在玩的時候(選單、結算畫面)每 20 秒重抓一次排行榜;切回分頁時也馬上重抓。
+     mode 是 CR.modes 裡的模式物件,只在它是目前模式時才抓 */
+  function autoRefresh(mode, fn) {
+    function idle() { return CR.mode === mode && CR.state !== 'play' && CR.state !== 'countdown' && !document.hidden; }
+    setInterval(function () { if (idle()) fn(); }, 20000);
+    document.addEventListener('visibilitychange', function () { if (idle()) fn(); });
+  }
+
+  CR.board = { autoRefresh: autoRefresh, load: load, submit: submit, render: render, getNick: getNick, setNick: setNick, cleanNick: cleanNick, SPOTS: SPOTS };
 })();

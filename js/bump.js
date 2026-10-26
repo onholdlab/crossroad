@@ -53,7 +53,7 @@
         '</div></div>' +
         '<div class="field" id="nickField"><label class="label" for="nick">' + tr('暱稱(排行榜上顯示)', 'Nickname (shown on the leaderboard)') + '</label>' +
           '<input id="nick" maxlength="12" autocomplete="off" spellcheck="false"></div>' +
-        '<div class="field" id="namesField" hidden><span class="label">' + tr('玩家名字(選填,取了名字就會在這台裝置記戰績)', 'Player names (optional; named players get a record on this device)') + '</span><div class="names" id="names"></div><p class="small twinsNote" id="twinsNote" hidden>' + tr('同名的玩家會合體成雙胞胎:同一個顏色,分數加總。', 'Players with the same name become twins: same color, scores added together.') + '</p></div>' +
+        '<div class="field" id="namesField" hidden><span class="label">' + tr('玩家名字(選填,取了名字就會在這台裝置記戰績)', 'Player names (optional; named players get a record on this device)') + '</span><div class="names" id="names"></div><p class="small twinsNote" id="twinsNote" hidden>' + tr('同名的玩家會合體成雙胞胎(三胞胎、四胞胎):同一個顏色,分數加總。', 'Players with the same name merge into twins (or triplets, quadruplets): same color, scores added together.') + '</p></div>' +
         '<p class="small" id="ctrlHint"></p>' +
         '<button class="btn" id="bStartBtn" type="button">' + tr('開始', 'Start') + '</button>' +
         '<section class="board" id="boardMenuWrap"><div class="label">' + tr('單人排行榜', 'Solo leaderboard') + '</div><ol id="boardMenu"></ol></section>' +
@@ -105,6 +105,12 @@
       by[k].members.push(p); by[k].total += p.score;
     });
     return t;
+  }
+  /* 2 人同名叫雙胞胎、3 人三胞胎、4 人四胞胎 */
+  function kin(n, zh) {
+    return zh === 'total' ? tr(['', '', '雙胞胎', '三胞胎', '四胞胎'][n] + '合計 ', ['', '', 'Twins', 'Triplets', 'Quadruplets'][n] + ' total: ')
+      : zh === 'rec' ? tr(' ' + ['', '', '雙胞胎', '三胞胎', '四胞胎'][n] + '新紀錄!', ' New ' + ['', '', 'twins', 'triplets', 'quadruplets'][n] + ' record!')
+      : tr('(' + ['', '', '雙胞胎', '三胞胎', '四胞胎'][n] + ')', ' (' + ['', '', 'twins', 'triplets', 'quadruplets'][n] + ')');
   }
   function colOf(i) { return PCOL[curNames[i] ? curNames[i].team : i]; }
   function loadRec() {
@@ -174,7 +180,7 @@
     el('bStartBtn').addEventListener('click', M.start);
     el('bAgain').addEventListener('click', M.start);
     el('bMenu').addEventListener('click', toMenu);
-    if (BOARD_ENABLED) { renderBoards(); refreshBoard(); }
+    if (BOARD_ENABLED) { renderBoards(); refreshBoard(); CR.board.autoRefresh(M, refreshBoard); }
   };
 
   M.enter = function () {
@@ -196,6 +202,7 @@
     el('rest').hidden = true;
     el('cd').hidden = true;
     syncMenu();
+    refreshBoard();
   }
 
   /* ───────── 回合流程 ───────── */
@@ -304,8 +311,8 @@
       var sorted = teams.slice().sort(function (a, b) { return b.total - a.total; });
       var top = sorted[0].total, coop = teams.length === 1;
       var winners = coop ? [] : sorted.filter(function (t) { return t.total === top; });
-      el('verdict').textContent = coop ? tr('雙胞胎合計 ', 'Twins total: ') + top + tr(' 人!', '!')
-        : winners.length > 1 ? tr('平手!', 'It\'s a tie!') : winners[0].name + (winners[0].size > 1 ? tr('(雙胞胎)', ' (twins)') : '') + tr(' 獲勝!', ' win' + (winners[0].size > 1 ? '!' : 's!'));
+      el('verdict').textContent = coop ? kin(sorted[0].size, 'total') + top + tr(' 人!', '!')
+        : winners.length > 1 ? tr('平手!', 'It\'s a tie!') : winners[0].name + (winners[0].size > 1 ? kin(winners[0].size) : '') + tr(' 獲勝!', ' win' + (winners[0].size > 1 ? '!' : 's!'));
       var ol = el('rankList');
       ol.textContent = '';
       sorted.forEach(function (t, i) {
@@ -329,10 +336,10 @@
     var rec = loadRec(), inRound = [];
     teams.forEach(function (t) {
       if (!t.named) return;
-      var twin = t.size > 1, key = t.key + (twin ? '#twins' : '');
+      var twin = t.size > 1, key = t.key + (twin ? '#x' + t.size : '');
       var r = rec[key] || (rec[key] = { n: t.name, g: 0, w: 0, b: 0 });
-      if (twin) r.t = 1;
-      if (coop && t.total > r.b && r.g > 0) el('verdict').textContent += tr(' 雙胞胎新紀錄!', ' New twins record!');
+      if (twin) r.t = t.size;
+      if (coop && t.total > r.b && r.g > 0) el('verdict').textContent += kin(t.size, 'rec');
       r.n = t.name; r.g++; r.b = Math.max(r.b, t.total);
       if (winners.length === 1 && winners[0] === t) r.w++;
       inRound.push(key);
@@ -348,7 +355,7 @@
       var li = document.createElement('li');
       if (inRound.indexOf(x.k) >= 0) li.className = 'me';
       var a = document.createElement('span'); a.textContent = String(i + 1);
-      var b = document.createElement('span'); b.textContent = x.r.n + (x.r.t ? tr('(雙胞胎)', ' (twins)') : '');
+      var b = document.createElement('span'); b.textContent = x.r.n + (x.r.t ? kin(x.r.t === 1 ? 2 : x.r.t) : '');
       var sm = document.createElement('small'); sm.textContent = tr(' 最高 ', ' best ') + x.r.b + tr(' · ' + x.r.g + ' 局', ' · ' + x.r.g + (x.r.g === 1 ? ' game' : ' games'));
       b.appendChild(sm);
       var c = document.createElement('b'); c.textContent = x.r.w + tr(' 勝', x.r.w === 1 ? ' win' : ' wins');

@@ -58,6 +58,7 @@
     nick.value = CR.board.getNick();
     nick.addEventListener('input', function () { CR.board.setNick(nick.value); });
     renderBoards();
+    CR.board.autoRefresh(M, refreshBoard);
   };
 
   M.enter = function () {
