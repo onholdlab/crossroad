@@ -11,6 +11,32 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
 <link rel="stylesheet" href="../css/style.css">
+<style id="inapp-lock">
+/* Threads / IG / FB 內建瀏覽器:鎖住整頁,手勢全部交給遊戲 */
+html,body{height:100%;overflow:hidden!important;overscroll-behavior:none}
+body{position:fixed;inset:0}
+</style>
+<script id="inapp-lock-js">
+(function(){
+  var SKIP='button,input,textarea,select,a,label,[contenteditable]';
+  function scrollable(el){
+    for(;el&&el.nodeType===1&&el!==document.body;el=el.parentElement){
+      var y=getComputedStyle(el).overflowY;
+      if((y==='auto'||y==='scroll')&&el.scrollHeight>el.clientHeight)return true;
+    }
+    return false;
+  }
+  document.addEventListener('touchstart',function(e){
+    var t=e.target;if(t.nodeType!==1)t=t.parentElement;
+    if(t&&!t.closest(SKIP)&&!scrollable(t))e.preventDefault();
+  },{passive:false});
+  document.addEventListener('touchmove',function(e){
+    var t=e.target;if(t.nodeType!==1)t=t.parentElement;
+    if(!scrollable(t))e.preventDefault();
+  },{passive:false});
+  document.addEventListener('gesturestart',function(e){e.preventDefault();});
+})();
+</script>
 </head>
 <body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>

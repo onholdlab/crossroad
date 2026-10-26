@@ -1,17 +1,48 @@
-
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <title>十字路口求生</title>
-  <meta http-equiv="refresh" content="0; url=survive/index.html">
-  <script>
-    location.replace(
-      location.protocol === 'file:'
-        ? 'survive/index.html'
-        : 'survive/index.html'
-    );
-  </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>十字路口求生</title>
+<meta property="og:title" content="十字路口求生">
+<meta property="og:description" content="每個人都想撞你,快躲過別人!">
+<meta property="og:image" content="https://onholdlab.github.io/crossroad/assets/cover-survive.webp">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="../css/style.css">
+<style id="inapp-lock">
+/* Threads / IG / FB 內建瀏覽器:鎖住整頁,手勢全部交給遊戲 */
+html,body{height:100%;overflow:hidden!important;overscroll-behavior:none}
+body{position:fixed;inset:0}
+</style>
+<script id="inapp-lock-js">
+(function(){
+  var SKIP='button,input,textarea,select,a,label,[contenteditable]';
+  function scrollable(el){
+    for(;el&&el.nodeType===1&&el!==document.body;el=el.parentElement){
+      var y=getComputedStyle(el).overflowY;
+      if((y==='auto'||y==='scroll')&&el.scrollHeight>el.clientHeight)return true;
+    }
+    return false;
+  }
+  document.addEventListener('touchstart',function(e){
+    var t=e.target;if(t.nodeType!==1)t=t.parentElement;
+    if(t&&!t.closest(SKIP)&&!scrollable(t))e.preventDefault();
+  },{passive:false});
+  document.addEventListener('touchmove',function(e){
+    var t=e.target;if(t.nodeType!==1)t=t.parentElement;
+    if(!scrollable(t))e.preventDefault();
+  },{passive:false});
+  document.addEventListener('gesturestart',function(e){e.preventDefault();});
+})();
+</script>
 </head>
-<body style="background:#0d1020"></body>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="../js/engine.js"></script>
+<script src="../js/survive.js"></script>
+<script src="../js/bump.js"></script>
+<script>CR.boot('survive');</script>
+</body>
 </html>
