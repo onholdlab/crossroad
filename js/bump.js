@@ -53,7 +53,7 @@
         '</div></div>' +
         '<div class="field" id="nickField"><label class="label" for="nick">' + tr('暱稱(排行榜上顯示)', 'Nickname (shown on the leaderboard)') + '</label>' +
           '<input id="nick" maxlength="12" autocomplete="off" spellcheck="false"></div>' +
-        '<div class="field" id="namesField" hidden><span class="label">' + tr('玩家名字(選填,取了名字就會在這台裝置記戰績)', 'Player names (optional; named players get a record on this device)') + '</span><div class="names" id="names"></div><p class="small twinsNote" id="twinsNote" hidden>' + tr('同名的玩家會合體成雙胞胎(三胞胎、四胞胎):同一個顏色,分數加總。', 'Players with the same name merge into twins (or triplets, quadruplets): same color, scores added together.') + '</p></div>' +
+        '<div class="field" id="namesField" hidden><span class="label">' + tr('玩家名字(選填,取了名字就會在這台裝置記戰績)', 'Player names (optional; named players get a record on this device)') + '</span><div class="names" id="names"></div></div>' +
         '<p class="small" id="ctrlHint"></p>' +
         '<button class="btn" id="bStartBtn" type="button">' + tr('開始', 'Start') + '</button>' +
         '<section class="board" id="boardMenuWrap"><div class="label">' + tr('單人排行榜', 'Solo leaderboard') + '</div><ol id="boardMenu"></ol></section>' +
@@ -95,7 +95,6 @@
     });
     return out;
   }
-  function anyTwins(n) { return roundNames(n).some(function (o) { return o.size > 1; }); }
   /* 這一局的隊伍(沒有雙胞胎時就是每人一隊),total 是分數加總 */
   function teamsOf(players) {
     var t = [], by = {};
@@ -141,7 +140,6 @@
     });
     el('nickField').hidden = !BOARD_ENABLED || nSel !== 1;
     el('namesField').hidden = nSel === 1;
-    el('twinsNote').hidden = nSel === 1 || !anyTwins(nSel);
     Array.prototype.forEach.call(document.querySelectorAll('#names input'), function (inp, i) { inp.parentNode.hidden = i >= nSel; });
     var parts = [];
     for (var i = 0; i < nSel; i++) parts.push(PCOL[i].name + ' ' + (nSel === 1 ? tr('WASD 或方向鍵', 'WASD or arrow keys') : PCOL[i].label));
@@ -163,7 +161,7 @@
       var t = document.createElement('span'); t.textContent = c.name;
       var inp = document.createElement('input'); inp.className = 'nick'; inp.maxLength = 10;
       inp.autocomplete = 'off'; inp.spellcheck = false; inp.placeholder = c.name; inp.value = names[i];
-      inp.addEventListener('input', function () { names[i] = inp.value; saveNames(); el('twinsNote').hidden = !anyTwins(nSel); });
+      inp.addEventListener('input', function () { names[i] = inp.value; saveNames(); });
       w.appendChild(t); w.appendChild(inp); box.appendChild(w);
     });
     segBtns.forEach(function (b) {
@@ -341,7 +339,7 @@
       if (twin) r.t = t.size;
       if (coop && t.total > r.b && r.g > 0) el('verdict').textContent += kin(t.size, 'rec');
       r.n = t.name; r.g++; r.b = Math.max(r.b, t.total);
-      if (winners.length === 1 && winners[0] === t) r.w++;
+      if (coop || (winners.length === 1 && winners[0] === t)) r.w++;   // 全員同名也算 1 勝
       inRound.push(key);
     });
     if (inRound.length) saveRec(rec);
