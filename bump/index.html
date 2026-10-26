@@ -15,6 +15,8 @@
 /* Threads / IG / FB 內建瀏覽器:鎖住整頁,手勢全部交給遊戲 */
 html,body{height:100%;overflow:hidden!important;overscroll-behavior:none}
 body{position:fixed;inset:0}
+/* 文件比畫面高 2px 並捲到 1px:App 會認為網頁不在最頂端,往下拖就不會把整個瀏覽器面板拉走 */
+html{height:calc(100% + 2px)!important}
 </style>
 <script id="inapp-lock-js">
 (function(){
@@ -35,6 +37,10 @@ body{position:fixed;inset:0}
     if(!scrollable(t))e.preventDefault();
   },{passive:false});
   document.addEventListener('gesturestart',function(e){e.preventDefault();});
+  /* inapp-keep1 */
+  function keep(){if(window.scrollY<1)window.scrollTo(0,1);}
+  keep();addEventListener('load',keep);addEventListener('resize',keep);addEventListener('scroll',keep,{passive:true});
+  document.addEventListener('touchstart',keep,{passive:true,capture:true});
 })();
 </script>
 <script data-goatcounter="https://onholdlab.goatcounter.com/count"
@@ -43,6 +49,7 @@ body{position:fixed;inset:0}
 <body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="../js/engine.js"></script>
+<script src="../js/board.js"></script>
 <script src="../js/survive.js"></script>
 <script src="../js/bump.js"></script>
 <script>CR.boot('bump');</script>

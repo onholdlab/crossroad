@@ -4,7 +4,7 @@
   var CR = window.CR, el = CR.el;
 
   /* 排行榜開關:false 時不連線,選單與結算畫面不出現排行榜字樣;本機最高分照常保留 */
-  var BOARD_ENABLED = false;
+  var BOARD_ENABLED = true;
 
   /* ───────── 撞人賽設定 ───────── */
   var ROUND = 60;        // 一回合秒數
@@ -70,67 +70,15 @@
   var nSel = 1;
   try { nSel = CR.clamp(parseInt(localStorage.getItem('bump-n'), 10) || 1, 1, 4); } catch (e) {}
 
-  /* ───────── 排行榜(db) ───────── */
-  var db = null, myId = null, canWrite = null;
-  var boardMode = 'loading';   // loading | ready | off
-  var rows = [];
-
+  /* ───────── 排行榜(Supabase,js/board.js) ───────── */
+  var boardRes = null;
   function renderBoards() {
     if (!BOARD_ENABLED) return;
-    ['boardMenu', 'boardOver'].forEach(function (id) {
-      var ol = el(id);
-      ol.textContent = '';
-      var msg = null;
-      if (boardMode === 'off') msg = '排行榜需要登入 Claude 後才能使用。';
-      else if (boardMode === 'loading') msg = '讀取中…';
-      else if (!rows.length) msg = '還沒有人上榜,成為第一個!';
-      if (msg) {
-        var m = document.createElement('li'); m.className = 'msg'; m.textContent = msg; ol.appendChild(m);
-        return;
-      }
-      rows.slice(0, 8).forEach(function (r, i) {
-        var li = document.createElement('li');
-        if (r.id === myId) li.className = 'me';
-        var a = document.createElement('span'); a.textContent = String(i + 1);
-        var b = document.createElement('span'); b.textContent = String(r.name || '玩家').slice(0, 12) + (r.id === myId ? '(你)' : '');
-        var c = document.createElement('b'); c.textContent = String(r.score);
-        li.appendChild(a); li.appendChild(b); li.appendChild(c);
-        ol.appendChild(li);
-      });
-    });
+    ['boardMenu', 'boardOver'].forEach(function (id) { CR.board.render(el(id), boardRes, String); });
   }
-
-  async function submitScore(name, score) {
-    if (!db || !myId) return { status: 'nodb' };
-    if (canWrite === false) return { status: 'readonly' };
-    try {
-      var ref = db.doc('scores/' + myId);
-      var cur = await ref.get();
-      var best = cur.exists ? (Number(cur.data().score) || 0) : 0;
-      if (score > best) {
-        await ref.set({ name: name, score: score, at: Date.now() });
-        return { status: 'new', best: score };
-      }
-      if (cur.exists && cur.data().name !== name) await ref.update({ name: name });
-      return { status: 'kept', best: best };
-    } catch (e) {
-      return { status: e && e.code === 'invalid_argument' ? 'readonly' : 'fail' };
-    }
-  }
-
-  async function initDb() {
-    try {
-      if (!window.claude || !window.claude.use) { boardMode = 'off'; renderBoards(); return; }
-      db = await window.claude.use('db');
-      var u = await window.claude.use('user');
-      if (u) { myId = await u.id(); canWrite = await u.can('data.write'); }
-      if (!db) { boardMode = 'off'; renderBoards(); return; }
-      db.collection('scores').orderBy('score', 'desc').limit(20).onSnapshot(function (snap) {
-        rows = snap.docs.map(function (d) { var v = d.data() || {}; return { id: d.id, name: v.name, score: Number(v.score) || 0 }; });
-        boardMode = 'ready';
-        renderBoards();
-      }, function () { boardMode = 'off'; renderBoards(); });
-    } catch (e) { boardMode = 'off'; renderBoards(); }
+  function refreshBoard() {
+    if (!BOARD_ENABLED) return Promise.resolve(null);
+    return CR.board.load('bump').then(function (r) { boardRes = r; renderBoards(); return r; });
   }
 
   /* ───────── 選單 ───────── */
@@ -155,8 +103,7 @@
   M.init = function () {
     segBtns = Array.prototype.slice.call(document.querySelectorAll('#seg button'));
     nickEl = el('nick');
-    try { nickEl.value = localStorage.getItem('bump-nick') || ''; } catch (e) {}
-    if (!nickEl.value) nickEl.value = '玩家' + (100 + ((Math.random() * 900) | 0));
+    nickEl.value = CR.board.getNick();
     segBtns.forEach(function (b) {
       b.addEventListener('click', function () {
         nSel = Number(b.dataset.n);
@@ -165,20 +112,22 @@
       });
     });
     nickEl.addEventListener('input', function () {
-      try { localStorage.setItem('bump-nick', nickEl.value.trim()); } catch (e) {}
+      CR.board.setNick(nickEl.value);
     });
     el('boardMenuWrap').hidden = !BOARD_ENABLED;
     el('bStartBtn').addEventListener('click', M.start);
     el('bAgain').addEventListener('click', M.start);
     el('bMenu').addEventListener('click', toMenu);
-    if (BOARD_ENABLED) { renderBoards(); initDb(); }
+    if (BOARD_ENABLED) { renderBoards(); refreshBoard(); }
   };
 
   M.enter = function () {
     el('hud').classList.add('idle');
     el('tLabel').textContent = '剩餘時間';
     el('t').textContent = String(ROUND);
+    if (nickEl) nickEl.value = CR.board.getNick();
     syncMenu();
+    refreshBoard();
   };
 
   function toMenu() {
@@ -279,17 +228,16 @@
         up.textContent = (isBest ? '新的個人最佳!' : '') + '這台裝置的最佳是 ' + localBest + ' 人。';
         return;
       }
-      var nick = (nickEl.value.trim() || '玩家').slice(0, 12);
+      var nick = CR.board.cleanNick(nickEl.value);
+      if (sc <= 0) { up.textContent = '撞倒 1 人以上才會記入排行榜。'; renderBoards(); return; }
       up.textContent = '上傳成績中…';
-      submitScore(nick, sc).then(function (r) {
-        var m = {
-          'new': '新的個人最佳!已更新排行榜。',
-          'kept': '你在排行榜上的最佳是 ' + (r.best || 0) + ' 人,這回合沒有超過。',
-          'nodb': '目前無法連上排行榜。這台裝置的最佳是 ' + localBest + ' 人。',
-          'readonly': '這個連結的權限不能上傳成績。請請作者把你設為協作者。這台裝置的最佳是 ' + localBest + ' 人。',
-          'fail': '上傳失敗,請稍後再試。這台裝置的最佳是 ' + localBest + ' 人。'
-        };
-        up.textContent = m[r.status] || '';
+      CR.board.submit('bump', nick, sc).then(function (r) {
+        if (!r.ok) { up.textContent = '目前連不上排行榜。這台裝置的最佳是 ' + localBest + ' 人。'; return; }
+        return refreshBoard().then(function (res) {
+          var pos = 0;
+          if (res && res.ok) res.rows.forEach(function (x, i) { if (x.me && !pos) pos = i + 1; });
+          up.textContent = (isBest ? '新的個人最佳!' : '') + (pos ? '你在排行榜第 ' + pos + ' 名。' : '這次還沒擠進前 ' + CR.board.SPOTS + ' 名。');
+        });
       });
     } else {
       var sorted = players.slice().sort(function (a, b) { return b.score - a.score; });

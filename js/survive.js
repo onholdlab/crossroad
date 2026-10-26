@@ -22,22 +22,42 @@
           '<li><i style="background:var(--go)"></i><span>綠燈 15 秒,人潮從四面八方湧入,越走越快。</span></li>' +
           '<li><i style="background:var(--stop)"></i><span>紅燈 3 秒是休息時間,路口內的人會離開,其他人停在路邊等。</span></li>' +
         '</ul>' +
+        '<div class="field"><label class="label" for="sNick">暱稱(排行榜上顯示)</label>' +
+          '<input id="sNick" class="nick" maxlength="12" autocomplete="off" spellcheck="false"></div>' +
         '<button class="btn" id="sStartBtn" type="button">開始</button>' +
+        '<section class="board"><div class="label">排行榜</div><ol id="sBoardMenu"></ol></section>' +
       '</div></div>' +
       '<div class="overlay" id="sOver" hidden><div class="panel">' +
         '<h1 class="bad">被撞到了</h1>' +
         '<div><div class="label">你堅持了</div><div class="big"><span id="sFinal">0.0</span><small>秒</small></div></div>' +
         '<span class="tag" id="sNewBest" hidden>新紀錄</span>' +
         '<div class="stats"><span>撐過紅燈<b id="sRed">0</b>次</span><span>最佳<b id="sBest">0.0</b>秒</span></div>' +
+        '<p class="small" id="sUpMsg"></p>' +
         '<button class="btn" id="sAgain" type="button">再來一次</button>' +
+        '<section class="board"><div class="label">排行榜</div><ol id="sBoardOver"></ol></section>' +
       '</div></div>'
   };
+
+  /* ───────── 排行榜(Supabase,js/board.js) ───────── */
+  var boardRes = null;
+  function fmt(v) { return Number(v).toFixed(1); }
+  function renderBoards() {
+    CR.board.render(el('sBoardMenu'), boardRes, fmt);
+    CR.board.render(el('sBoardOver'), boardRes, fmt);
+  }
+  function refreshBoard() {
+    return CR.board.load('survive').then(function (r) { boardRes = r; renderBoards(); return r; });
+  }
 
   function addPlayer() { CR.makePlayer(0, 4, { css: '#ffd23f', num: 0xffd23f, glow: 0.55 }); }
 
   M.init = function () {
     el('sStartBtn').addEventListener('click', M.start);
     el('sAgain').addEventListener('click', M.start);
+    var nick = el('sNick');
+    nick.value = CR.board.getNick();
+    nick.addEventListener('input', function () { CR.board.setNick(nick.value); });
+    renderBoards();
   };
 
   M.enter = function () {
@@ -47,6 +67,8 @@
     el('tLabel').textContent = '存活時間';
     el('t').textContent = '0.0';
     el('sBest').textContent = best.toFixed(1);
+    el('sNick').value = CR.board.getNick();
+    refreshBoard();
   };
 
   M.start = function () {
@@ -103,6 +125,17 @@
     el('sRed').textContent = String(redCount);
     el('sBest').textContent = best.toFixed(1);
     el('sNewBest').hidden = !isBest || elapsed < 1;
+    var up = el('sUpMsg'), score = Math.round(elapsed * 10) / 10;
+    if (score < 1) { up.textContent = '撐過 1 秒以上才會記入排行榜。'; return; }
+    up.textContent = '上傳成績中…';
+    CR.board.submit('survive', el('sNick').value, score).then(function (r) {
+      if (!r.ok) { up.textContent = '目前連不上排行榜。'; return; }
+      return refreshBoard().then(function (res) {
+        var pos = 0;
+        if (res && res.ok) res.rows.forEach(function (x, i) { if (x.me && !pos) pos = i + 1; });
+        up.textContent = pos ? '你在排行榜第 ' + pos + ' 名。' : '這次還沒擠進前 ' + CR.board.SPOTS + ' 名。';
+      });
+    });
   };
 
   M.post = function () {
