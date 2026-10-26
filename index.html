@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <title>十字路口求生</title>
-<meta http-equiv="refresh" content="0; url=survive/">
+<meta http-equiv="refresh" content="0; url=survive/index.html">
 <script>
-  /* file:// 下資料夾網址不會自動開 index.html */
-  location.replace(location.protocol === 'file:' ? 'survive/index.html' : 'survive/');
+  /* file:// 和 itch.io 不會自動開資料夾的 index.html,只有 GitHub Pages 用短網址 */
+  location.replace(/github\.io$/.test(location.hostname) ? 'survive/' : 'survive/index.html');
 </script>
 </head>
 <body style="background:#0d1020"></body>

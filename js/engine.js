@@ -726,7 +726,8 @@
     var M = CR.modes[name], old = CR.mode;
     if (push) {
       /* file:// 下 Chrome 不允許 pushState 到別的路徑,改成一般跳轉 */
-      try { history.pushState({ mode: name, depth: 1 }, '', '../' + name + '/'); }
+      var tail = /index\.html$/.test(location.pathname) ? 'index.html' : '';   // itch.io / file:// 要帶完整檔名,重新整理才不會 404
+      try { history.pushState({ mode: name, depth: 1 }, '', '../' + name + '/' + tail); }
       catch (e) { location.href = '../' + name + '/index.html'; return; }
     }
     timers.forEach(clearTimeout); timers = [];
