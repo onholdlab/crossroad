@@ -165,3 +165,12 @@ input#nick, input.nick { font: 500 16px var(--body); color: var(--paper); backgr
 .verdict { font-size: 20px !important; font-weight: 900; color: var(--player) !important; }
 
 .board .priv { display: inline-block; margin-top: 8px; font-size: 12px; color: var(--muted); text-underline-offset: 3px; min-height: 32px; line-height: 32px; }
+
+.names { display: grid; gap: 6px; }
+.pname { display: grid; grid-template-columns: 32px minmax(0, 1fr); align-items: center; gap: 8px; }
+.pname[hidden] { display: none; }
+.pname span { font: 900 14px var(--body); color: var(--c); }
+.pname input.nick { border-left: 4px solid var(--c); padding: 8px 10px; }
+.friends li small { opacity: 0.65; font-size: 12px; margin-left: 6px; }
+.friends li b { font-size: 16px !important; }
+#friendsWrap { margin-top: 14px; }

@@ -53,6 +53,7 @@
         '</div></div>' +
         '<div class="field" id="nickField"><label class="label" for="nick">' + tr('暱稱(排行榜上顯示)', 'Nickname (shown on the leaderboard)') + '</label>' +
           '<input id="nick" maxlength="12" autocomplete="off" spellcheck="false"></div>' +
+        '<div class="field" id="namesField" hidden><span class="label">' + tr('玩家名字(選填,取了名字就會在這台裝置記戰績)', 'Player names (optional; named players get a record on this device)') + '</span><div class="names" id="names"></div></div>' +
         '<p class="small" id="ctrlHint"></p>' +
         '<button class="btn" id="bStartBtn" type="button">' + tr('開始', 'Start') + '</button>' +
         '<section class="board" id="boardMenuWrap"><div class="label">' + tr('單人排行榜', 'Solo leaderboard') + '</div><ol id="boardMenu"></ol></section>' +
@@ -60,15 +61,39 @@
       '<div class="overlay" id="bOver" hidden><div class="panel">' +
         '<h1>' + tr('時間到', 'Time\'s up') + '</h1>' +
         '<div id="soloRes"><div class="label">' + tr('你撞倒了', 'You knocked down') + '</div><div class="big"><span id="finalN">0</span>' + tr('<small>人</small>', '<small>people</small>') + '</div><p id="upMsg" class="small"></p></div>' +
-        '<div id="multiRes" hidden><p class="verdict" id="verdict"></p><ol class="rank" id="rankList"></ol></div>' +
+        '<div id="multiRes" hidden><p class="verdict" id="verdict"></p><ol class="rank" id="rankList"></ol>' +
+          '<section class="board" id="friendsWrap"><div class="label">' + tr('這台裝置的戰績', 'Record on this device') + '</div><ol class="friends" id="friends"></ol></section>' +
+          '<p class="small" id="friendsHint"></p></div>' +
         '<div class="btns"><button class="btn" id="bAgain" type="button">' + tr('再來一次', 'Play again') + '</button><button class="btn ghost" id="bMenu" type="button">' + tr('回選單', 'Menu') + '</button></div>' +
         '<section class="board" id="boardOverWrap"><div class="label">' + tr('單人排行榜', 'Solo leaderboard') + '</div><ol id="boardOver"></ol><a class="priv" href="https://onholdlab.github.io/privacy/" target="_blank" rel="noopener">' + tr('排行榜會公開暱稱與分數 · 隱私權政策', 'Nicknames and scores are public · Privacy policy') + '</a></section>' +
       '</div></div>'
   };
 
+  var curNames = [];
   var timeLeft = ROUND, cdLeft = COUNTDOWN, lastCd = -1, lastT = -1, overAt = 0;
   var nSel = 1;
   try { nSel = CR.clamp(parseInt(localStorage.getItem('bump-n'), 10) || 1, 1, 4); } catch (e) {}
+
+  /* ───────── 多人:名字與本機戰績(只存在這台裝置,不上傳) ───────── */
+  var names = ['', '', '', ''];
+  try { var sn = JSON.parse(localStorage.getItem('bump-names')); if (Array.isArray(sn)) for (var q = 0; q < 4; q++) names[q] = typeof sn[q] === 'string' ? sn[q].slice(0, 10) : ''; } catch (e) {}
+  function saveNames() { try { localStorage.setItem('bump-names', JSON.stringify(names)); } catch (e) {} }
+  /* 回合用的顯示名:沒填用 P1~P4;同一局重名的,後面的人退回 Pn */
+  function roundNames(n) {
+    var out = [], seen = {};
+    for (var i = 0; i < n; i++) {
+      var nm = names[i].trim(), key = nm.toLowerCase();
+      if (!nm || seen[key]) out.push({ name: PCOL[i].name, named: false });
+      else { seen[key] = 1; out.push({ name: nm, named: true }); }
+    }
+    return out;
+  }
+  function loadRec() {
+    var r = null;
+    try { r = JSON.parse(localStorage.getItem('bump-friends')); } catch (e) {}
+    return r && typeof r === 'object' && !Array.isArray(r) ? r : {};
+  }
+  function saveRec(r) { try { localStorage.setItem('bump-friends', JSON.stringify(r)); } catch (e) {} }
 
   /* ───────── 排行榜(Supabase,js/board.js) ───────── */
   var boardRes = null;
@@ -90,6 +115,8 @@
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
     el('nickField').hidden = !BOARD_ENABLED || nSel !== 1;
+    el('namesField').hidden = nSel === 1;
+    Array.prototype.forEach.call(document.querySelectorAll('#names input'), function (inp, i) { inp.parentNode.hidden = i >= nSel; });
     var parts = [];
     for (var i = 0; i < nSel; i++) parts.push(PCOL[i].name + ' ' + (nSel === 1 ? tr('WASD 或方向鍵', 'WASD or arrow keys') : PCOL[i].label));
     var touch = nSel === 1 ? tr('手機:在畫面上拖曳。', 'Phone: drag on the screen.') : tr('手機:畫面分成 ', 'Phone: the screen splits into ') + nSel + tr(' 個區塊,各自拖曳。', ' zones, one per player.');
@@ -104,6 +131,15 @@
     segBtns = Array.prototype.slice.call(document.querySelectorAll('#seg button'));
     nickEl = el('nick');
     nickEl.value = CR.board.getNick();
+    var box = el('names');
+    PCOL.forEach(function (c, i) {
+      var w = document.createElement('label'); w.className = 'pname'; w.style.setProperty('--c', c.css);
+      var t = document.createElement('span'); t.textContent = c.name;
+      var inp = document.createElement('input'); inp.className = 'nick'; inp.maxLength = 10;
+      inp.autocomplete = 'off'; inp.spellcheck = false; inp.placeholder = c.name; inp.value = names[i];
+      inp.addEventListener('input', function () { names[i] = inp.value; saveNames(); });
+      w.appendChild(t); w.appendChild(inp); box.appendChild(w);
+    });
     segBtns.forEach(function (b) {
       b.addEventListener('click', function () {
         nSel = Number(b.dataset.n);
@@ -149,7 +185,7 @@
     CR.players.forEach(function (p) {
       var d = document.createElement('div'); d.className = 'sc';
       d.style.setProperty('--c', PCOL[p.i].css);
-      var s = document.createElement('span'); s.className = 'sn'; s.textContent = CR.players.length === 1 ? tr('撞倒', 'Hits') : PCOL[p.i].name;
+      var s = document.createElement('span'); s.className = 'sn'; s.textContent = CR.players.length === 1 ? tr('撞倒', 'Hits') : curNames[p.i].name;
       var b = document.createElement('b'); b.textContent = '0';
       d.appendChild(s); d.appendChild(b); box.appendChild(d);
       p.scoreEl = b; p.shown = 0;
@@ -161,16 +197,18 @@
     CR.clearPeds();
     CR.removePlayers();
     var pos = STARTS[nSel - 1];
+    curNames = roundNames(nSel);
+    if (nSel > 1) { try { if (window.goatcounter && goatcounter.count) goatcounter.count({ path: 'bump-multi-' + nSel, title: 'Bump ' + nSel + 'P', event: true }); } catch (e) {} }
     for (var i = 0; i < nSel; i++) {
       var c = PCOL[i];
-      CR.makePlayer(pos[i][0], pos[i][1], { i: i, css: c.css, num: c.num, glow: 0.5, label: nSel > 1 ? c.name : null });
+      CR.makePlayer(pos[i][0], pos[i][1], { i: i, css: c.css, num: c.num, glow: 0.5, label: nSel > 1 ? curNames[i].name : null });
     }
     timeLeft = ROUND; cdLeft = COUNTDOWN; lastCd = -1; lastT = -1;
     CR.resetRound(0.5);
     M.overShown = false;
     for (var k = 0; k < 14; k++) CR.spawnPed(true);
     buildScoreCards();
-    CR.buildSticks(PCOL.map(function (c) { return c.css; }), PCOL.map(function (c) { return c.name; }));
+    CR.buildSticks(PCOL.map(function (c) { return c.css; }), PCOL.map(function (c, i) { return curNames[i] ? curNames[i].name : c.name; }));
     CR.state = 'countdown';
     el('bStart').hidden = true;
     el('bOver').hidden = true;
@@ -243,7 +281,7 @@
       var sorted = players.slice().sort(function (a, b) { return b.score - a.score; });
       var top = sorted[0].score;
       var winners = sorted.filter(function (p) { return p.score === top; });
-      el('verdict').textContent = winners.length > 1 ? tr('平手!', 'It\'s a tie!') : PCOL[winners[0].i].name + tr(' 獲勝!', ' wins!');
+      el('verdict').textContent = winners.length > 1 ? tr('平手!', 'It\'s a tie!') : curNames[winners[0].i].name + tr(' 獲勝!', ' wins!');
       var ol = el('rankList');
       ol.textContent = '';
       sorted.forEach(function (p, i) {
@@ -251,13 +289,46 @@
         li.style.setProperty('--c', PCOL[p.i].css);
         if (p.score === top) li.className = 'win';
         var a = document.createElement('span'); a.textContent = String(i + 1);
-        var b = document.createElement('span'); b.textContent = PCOL[p.i].name;
+        var b = document.createElement('span'); b.textContent = curNames[p.i].name;
         if (p.score === top) { var em = document.createElement('em'); em.textContent = winners.length > 1 ? tr('平手', 'Tie') : tr('冠軍', 'Winner'); b.appendChild(em); }
         var c = document.createElement('b'); c.textContent = String(p.score);
         li.appendChild(a); li.appendChild(b); li.appendChild(c);
         ol.appendChild(li);
       });
+      recordFriends(players, winners);
     }
+  }
+
+  /* 有取名字的玩家記入本機戰績:局數、勝場(平手不算)、最高撞倒數 */
+  function recordFriends(players, winners) {
+    var rec = loadRec(), inRound = [];
+    players.forEach(function (p) {
+      var n = curNames[p.i];
+      if (!n.named) return;
+      var key = n.name.toLowerCase();
+      var r = rec[key] || (rec[key] = { n: n.name, g: 0, w: 0, b: 0 });
+      r.n = n.name; r.g++; r.b = Math.max(r.b, p.score);
+      if (winners.length === 1 && winners[0] === p) r.w++;
+      inRound.push(key);
+    });
+    if (inRound.length) saveRec(rec);
+    var list = Object.keys(rec).map(function (k) { return { k: k, r: rec[k] }; })
+      .sort(function (a, b) { return b.r.w - a.r.w || b.r.b - a.r.b || b.r.g - a.r.g; }).slice(0, 8);
+    var ol = el('friends');
+    ol.textContent = '';
+    el('friendsWrap').hidden = !list.length;
+    el('friendsHint').textContent = inRound.length ? '' : tr('在選單幫玩家取名字,就會在這台裝置記戰績。', 'Name players in the menu to keep a record on this device.');
+    list.forEach(function (x, i) {
+      var li = document.createElement('li');
+      if (inRound.indexOf(x.k) >= 0) li.className = 'me';
+      var a = document.createElement('span'); a.textContent = String(i + 1);
+      var b = document.createElement('span'); b.textContent = x.r.n;
+      var sm = document.createElement('small'); sm.textContent = tr(' 最高 ', ' best ') + x.r.b + tr(' · ' + x.r.g + ' 局', ' · ' + x.r.g + (x.r.g === 1 ? ' game' : ' games'));
+      b.appendChild(sm);
+      var c = document.createElement('b'); c.textContent = x.r.w + tr(' 勝', x.r.w === 1 ? ' win' : ' wins');
+      li.appendChild(a); li.appendChild(b); li.appendChild(c);
+      ol.appendChild(li);
+    });
   }
 
   M.pedSpeed = function (advance) {
