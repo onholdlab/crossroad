@@ -147,7 +147,7 @@
     var multiTouch = nSel > 1 && window.matchMedia('(pointer: coarse)').matches;
     el('ctrlHint').classList.toggle('multi', multiTouch);
     el('ctrlHint').textContent = multiTouch
-      ? tr('多人模式:手機歡迎橫放遊玩。畫面分成 ', 'Multiplayer: try your phone sideways. The screen splits into ') + nSel + tr(' 個區塊,各自拖曳。', ' zones, one per player.')
+      ? tr('多人模式:手機歡迎橫放遊玩。畫面分成 ', 'Multiplayer: try your phone sideways. The screen splits into ') + nSel + tr(' 個區塊,各自拖曳;拇指從內側開始滑,別從螢幕邊緣起手。', ' zones, one per player. Start each drag away from the screen edge.')
       : tr('電腦:', 'Keyboard: ') + parts.join(' · ') + tr('。', '. ') + touch;
   }
 

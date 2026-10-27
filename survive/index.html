@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>十字路口求生</title>
 <meta property="og:title" content="十字路口求生">
 <meta property="og:description" content="每個人都想撞你,快躲過別人!">
@@ -15,9 +15,9 @@
 /* Threads / IG / FB 內建瀏覽器:鎖住整頁,手勢全部交給遊戲 */
 html,body{height:100%;overflow:hidden!important;overscroll-behavior:none}
 body{position:fixed;inset:0}
-/* 文件比畫面高、寬各 2px 並捲到 (1,1):App 會認為網頁上下左右都還能捲,
-   往下拖不會拉走瀏覽器面板,碰到左右邊滑也不會整個面板被左右拖動 */
-html{height:calc(100% + 2px)!important;width:calc(100% + 2px)!important}
+/* 文件比畫面高 2px 並捲到 1px:App 會認為網頁不在最頂端,往下拖就不會把整個瀏覽器面板拉走
+   (左右邊緣滑動把面板拖走是 Threads 自己的「右滑關閉」手勢,網頁還沒載入時也會發生,網頁擋不了,不用在這裡處理) */
+html{height:calc(100% + 2px)!important}
 </style>
 <script id="inapp-lock-js">
 (function(){
@@ -39,8 +39,7 @@ html{height:calc(100% + 2px)!important;width:calc(100% + 2px)!important}
   },{passive:false});
   document.addEventListener('gesturestart',function(e){e.preventDefault();});
   /* inapp-keep1 */
-  /* inapp-keep2:左右也保持在 1px,兩側都還有可捲空間 */
-  function keep(){if(window.scrollY!==1||window.scrollX!==1)window.scrollTo(1,1);}
+  function keep(){if(window.scrollY<1)window.scrollTo(0,1);}
   keep();addEventListener('load',keep);addEventListener('resize',keep);addEventListener('scroll',keep,{passive:true});
   document.addEventListener('touchstart',keep,{passive:true,capture:true});
 })();
