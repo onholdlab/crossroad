@@ -62,7 +62,7 @@ for (const vp of [{ width: 360, height: 640 }, { width: 667, height: 375 }]) {
           docScroll: document.documentElement.scrollWidth - innerWidth, ovScroll: ov.scrollWidth - ov.clientWidth, vw: innerWidth
         };
       });
-      expect(r.text).toBe(`多人模式:手機歡迎橫放遊玩。畫面分成 ${n} 個區塊,各自拖曳;拇指從內側開始滑,別從螢幕邊緣起手。`);
+      expect(r.text).toBe(`多人模式:手機歡迎橫放遊玩。畫面分成 ${n} 個區塊,各自拖曳。`);
       expect(r.size).toBeGreaterThanOrEqual(BASE_PX * 1.25);
       expect(r.weight).toBeGreaterThanOrEqual(700);
       expect(r.color).toBe('rgb(255, 196, 0)');
