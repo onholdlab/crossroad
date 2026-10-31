@@ -56,7 +56,7 @@
         '<div class="field" id="namesField" hidden><span class="label">' + tr('玩家名字(選填,取了名字就會在這台裝置記戰績)', 'Player names (optional; named players get a record on this device)') + '</span><div class="names" id="names"></div></div>' +
         '<p class="small" id="ctrlHint"></p>' +
         '<button class="btn" id="bStartBtn" type="button">' + tr('開始', 'Start') + '</button>' +
-        '<section class="board" id="boardMenuWrap"><div class="label">' + tr('單人排行榜', 'Solo leaderboard') + '</div><ol id="boardMenu"></ol></section>' +
+        '<section class="board" id="boardMenuWrap"><div class="label">' + tr('單人排行榜', 'Solo leaderboard') + '</div><ol id="boardMenu"></ol><a class="priv" href="https://onholdlab.github.io/privacy/" target="_blank" rel="noopener">' + tr('排行榜會公開暱稱與分數 · 隱私權政策', 'Nicknames and scores are public · Privacy policy') + '</a></section>' +
       '</div></div>' +
       '<div class="overlay" id="bOver" hidden><div class="panel">' +
         '<h1>' + tr('時間到', 'Time\'s up') + '</h1>' +
