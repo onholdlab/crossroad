@@ -4,7 +4,7 @@
   'use strict';
   var CR = window.CR;
   /* 只要填這一行:ohl-api 部署後的網址,例如 https://ohl-api.xxxx.workers.dev */
-  var CFG = { api: '' };
+  var CFG = { api: 'https://ohl-api.onholdlab.workers.dev' };
   var SPOTS = 11;
 
   function base() { return CFG.api.replace(/\/+$/, ''); }
