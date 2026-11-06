@@ -1,21 +1,13 @@
-/* 十字路口共用排行榜:成績存在 onholdlab 的 Supabase(scores 表 + leaderboard 檢視)。
-   每台裝置一個隨機 id,排行榜每台裝置只取最好的一筆。
-   key 是 publishable 公開金鑰,只能新增成績、讀排行榜,放在網頁裡沒有問題。 */
+/* 十字路口共用排行榜:成績存在 onholdlab 的 Cloudflare Worker「ohl-api」+ D1(程式在 onholdlab/ohl-api)。
+   每台裝置一個隨機 id,排行榜每台裝置只取最好的一筆;同一台裝置 5 秒內只能送一筆。 */
 (function () {
   'use strict';
   var CR = window.CR;
-  var CFG = {
-    url: 'https://zfghylavaxulytlbbxqi.supabase.co',
-    key: 'sb_publishable_13fkPXai231g3G0JU4mWhA_G_hctIxL'
-  };
+  /* 只要填這一行:ohl-api 部署後的網址,例如 https://ohl-api.xxxx.workers.dev */
+  var CFG = { api: '' };
   var SPOTS = 11;
 
-  function headers(extra) {
-    var h = { 'apikey': CFG.key, 'Content-Type': 'application/json' };
-    if (CFG.key.indexOf('sb_') !== 0) h.Authorization = 'Bearer ' + CFG.key;
-    for (var k in extra) h[k] = extra[k];
-    return h;
-  }
+  function base() { return CFG.api.replace(/\/+$/, ''); }
   function timeout(ms) {
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
     var t = setTimeout(function () { if (ctl) ctl.abort(); }, ms);
@@ -44,10 +36,10 @@
   function cleanNick(n) { return (String(n || '').trim() || tr('玩家', 'Player')).slice(0, 12); }
 
   function load(game) {
+    if (!CFG.api) return Promise.resolve({ ok: false, rows: [] });
     var to = timeout(8000);
-    var q = CFG.url + '/rest/v1/leaderboard?select=name,score,device&game=eq.' + game +
-      '&order=score.desc,created_at.asc&limit=' + SPOTS;
-    return fetch(q, { headers: headers({}), signal: to.signal }).then(function (r) {
+    var q = base() + '/leaderboard?game=' + encodeURIComponent(game) + '&limit=' + SPOTS;
+    return fetch(q, { signal: to.signal }).then(function (r) {
       to.done();
       if (!r.ok) throw new Error('http_' + r.status);
       return r.json();
@@ -57,12 +49,13 @@
   }
 
   function submit(game, name, score) {
+    if (!CFG.api) return Promise.resolve({ ok: false });
     var to = timeout(8000);
-    return fetch(CFG.url + '/rest/v1/scores', {
+    return fetch(base() + '/scores', {
       method: 'POST', signal: to.signal,
-      headers: headers({ 'Prefer': 'return=minimal' }),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ game: game, name: cleanNick(name), score: score, device: deviceId() })
-    }).then(function (r) { to.done(); return { ok: r.status === 201 || r.status === 204 }; },
+    }).then(function (r) { to.done(); return { ok: r.status === 201 || r.status === 200 }; },
       function () { to.done(); return { ok: false }; });
   }
 

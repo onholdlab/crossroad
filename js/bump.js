@@ -119,7 +119,7 @@
   }
   function saveRec(r) { try { localStorage.setItem('bump-friends', JSON.stringify(r)); } catch (e) {} }
 
-  /* ───────── 排行榜(Supabase,js/board.js) ───────── */
+  /* ───────── 排行榜(Cloudflare ohl-api,js/board.js) ───────── */
   var boardRes = null;
   function renderBoards() {
     if (!BOARD_ENABLED) return;
