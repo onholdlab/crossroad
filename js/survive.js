@@ -38,7 +38,7 @@
       '</div></div>'
   };
 
-  /* ───────── 排行榜(Supabase,js/board.js) ───────── */
+  /* ───────── 排行榜(Cloudflare ohl-api,js/board.js) ───────── */
   var boardRes = null;
   function fmt(v) { return Number(v).toFixed(1); }
   function renderBoards() {
