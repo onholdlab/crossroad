@@ -11,22 +11,33 @@ const { BASE_SHA, HEAD_SHA } = process.env;
 const labels = JSON.parse(process.env.PR_LABELS || '[]');
 const LABEL = 'harness-reviewed';
 
-const git = (...a) => execFileSync('git', a, { encoding: 'utf8' });
+const git = (...args) => execFileSync('git', ['--literal-pathspecs', ...args], { encoding: 'utf8' });
 const under = (p, dir) => p === dir.replace(/\/$/, '') || p.startsWith(dir.replace(/\/$/, '') + '/');
 const base = git('merge-base', BASE_SHA, HEAD_SHA).trim();
+const diff = ['diff', '--no-renames', '--no-ext-diff', '--no-textconv'];
 
 const problems = [];
-for (const line of git('diff', '--name-status', '-M', base, HEAD_SHA).trim().split('\n').filter(Boolean)) {
-  const [status, ...paths] = line.split('\t');
-  const path = paths[0];
+// NUL delimiters preserve literal paths. Moves are reported as a deletion and an addition.
+const changes = git(...diff, '--name-status', '-z', base, HEAD_SHA).split('\0');
+for (let i = 0; i < changes.length - 1; i += 2) {
+  const status = changes[i];
+  const path = changes[i + 1];
   const isTest = (cfg.testDirs || []).some(d => under(path, d));
   const isHarness = (cfg.harnessPaths || []).some(d => under(path, d));
   if (!isTest && !isHarness) continue;
-  if (status === 'A') continue; // 新增檔案一律可以
-  if (isHarness) { problems.push(`改了 harness：${status} ${paths.join(' → ')}`); continue; }
-  if (status !== 'M') { problems.push(`刪除或搬移既有測試：${status} ${paths.join(' → ')}`); continue; }
-  const [, deleted] = git('diff', '--numstat', base, HEAD_SHA, '--', path).trim().split('\t');
-  if (Number(deleted) > 0) problems.push(`改寫既有測試（刪了 ${deleted} 行）：${path}`);
+  const displayPath = JSON.stringify(path);
+  if (isHarness) {
+    problems.push(`改了 harness：${status} ${displayPath}`);
+    continue;
+  }
+  if (status === 'A') continue;
+  if (status !== 'M') {
+    problems.push(`刪除、搬移或更換既有測試的檔案類型：${status} ${displayPath}`);
+    continue;
+  }
+  // Force text comparison so a PR's .gitattributes cannot hide removed lines.
+  const [, deleted] = git(...diff, '--text', '--diff-algorithm=minimal', '--numstat', '-z', base, HEAD_SHA, '--', path).split('\t', 2);
+  if (deleted !== '0') problems.push(`改寫既有測試：${displayPath}`);
 }
 
 if (!problems.length) { console.log('test-guard：沒有改寫或刪除既有測試，也沒有改 harness。'); process.exit(0); }

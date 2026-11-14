@@ -21,11 +21,11 @@
 
 - 既有測試不能改寫或刪除。測試沒過要修的是程式碼，不是測試。
 - 如果認為測試本身寫錯了，停下來說明是哪一條、為什麼錯、規格該怎麼改，由使用者決定。
-- CI 的 test-guard 會擋：PR 改寫或刪除既有測試，或改了 `.claude/hooks/`、`.claude/settings.json`、`.github/`、`playwright.config.js`、`tests/server.js`，都要使用者在 PR 加上 `harness-reviewed` 標籤才會通過。
+- CI 的 test-guard 會擋：PR 改寫、刪除或搬移既有測試，或新增、修改 `.claude/hooks/`、`.claude/settings.json`、`.github/workflows/`、`.github/scripts/`、`playwright.config.js`、`tests/server.js` 這些 harness 檔案，都要使用者在 PR 加上 `harness-reviewed` 標籤才會通過。
 
 ## 自動檢查（harness）
 
-- 每個 PR 都會在 GitHub Actions 跑兩項：`test`（Playwright，用 runner 內建的 Chrome）與 `test-guard`。有紅叉就不要合併。
+- 每個 PR 都會在 GitHub Actions 跑 `test`（先跑 harness 自我測試，再跑 Playwright，用 runner 內建的 Chrome）。`test-guard` 要等它合併進 `main` 之後，才會檢查之後送往 `main` 的 PR，結果回報在 PR 最新的 commit。有紅叉就不要合併；要讓紅叉真的擋住合併，需在 GitHub 另設分支保護。
 - 本機第一次跑：在專案資料夾執行 `npm ci`，之後 `npm test`。需要電腦上有 Google Chrome。
 
 ## 長任務的 context

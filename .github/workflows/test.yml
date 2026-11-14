@@ -17,6 +17,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: harness 自我測試
+        run: node --test .github/scripts/harness.test.mjs
       - run: npm ci
       - run: npx playwright test
       # 失敗時把截圖與錯誤內容留下來（Actions 頁面下方 Artifacts 可下載），診斷時看畫面而不是猜
