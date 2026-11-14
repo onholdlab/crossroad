@@ -145,6 +145,16 @@ input#nick, input.nick { font: 500 16px var(--body); color: var(--paper); backgr
   .signal { min-width: 0; column-gap: 8px; }
   .hud .label { letter-spacing: 0.04em; }
 }
+/* 直放觸控時讓角落按鈕排成底列，選單只在底列上方捲動。 */
+@media (orientation: portrait) and (pointer: coarse) {
+  #bStart {
+    bottom: calc(max(12px, var(--safe-b)) + 56px);
+    padding-bottom: 12px;
+    touch-action: pan-y;
+  }
+  #bStart:not([hidden]) ~ .corner { flex-direction: row; gap: 8px; }
+  .stage:has(#bStart:not([hidden])) .foot { display: none; }
+}
 /* 橫放手機:HUD 收到左右兩欄,中間留給放大的路口(engine.js 的 fitView 依 --side-col 計算) */
 @media (orientation: landscape) and (max-height: 500px) {
   .hud { --side-col: 116px; padding-top: max(10px, var(--safe-t)); padding-bottom: max(10px, var(--safe-b)); }

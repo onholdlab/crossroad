@@ -36,3 +36,14 @@ for (const mode of Object.keys(MODES)) {
     expect(errors).toEqual([]);
   });
 }
+
+test('撞人賽倒數在低更新率下仍按實際時間結束', async ({ page }) => {
+  await page.addInitScript(() => {
+    const requestFrame = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = callback => requestFrame(now => setTimeout(() => callback(now), 200));
+  });
+  await page.goto('/bump/');
+  await page.locator(MODES.bump.start).click();
+  expect(await page.evaluate(() => CR.state)).toBe('countdown');
+  await expect.poll(() => page.evaluate(() => CR.state), { timeout: 6000 }).toBe('play');
+});

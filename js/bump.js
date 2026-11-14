@@ -70,7 +70,7 @@
   };
 
   var curNames = [], curTeams = [];
-  var timeLeft = ROUND, cdLeft = COUNTDOWN, lastCd = -1, lastT = -1, overAt = 0;
+  var timeLeft = ROUND, countdownEnd = 0, lastCd = -1, lastT = -1, overAt = 0;
   var nSel = 1;
   try { nSel = CR.clamp(parseInt(localStorage.getItem('bump-n'), 10) || 1, 1, 4); } catch (e) {}
 
@@ -230,12 +230,13 @@
       var c = colOf(i);
       CR.makePlayer(pos[i][0], pos[i][1], { i: i, css: c.css, num: c.num, glow: 0.5, label: nSel > 1 ? curNames[i].tag : null });
     }
-    timeLeft = ROUND; cdLeft = COUNTDOWN; lastCd = -1; lastT = -1;
+    timeLeft = ROUND; lastCd = -1; lastT = -1;
     CR.resetRound(0.5);
     M.overShown = false;
     for (var k = 0; k < 14; k++) CR.spawnPed(true);
     buildScoreCards();
     CR.buildSticks(PCOL.map(function (c, i) { return colOf(i).css; }), PCOL.map(function (c, i) { return curNames[i] ? curNames[i].tag : c.name; }));
+    countdownEnd = performance.now() + COUNTDOWN * 1000;
     CR.state = 'countdown';
     el('bStart').hidden = true;
     el('bOver').hidden = true;
@@ -378,13 +379,12 @@
     return CR.state === 'menu' ? 0.9 : 0.55 / (1 + 0.35 * (Math.max(1, CR.players.length) - 1));
   };
 
-  M.pre = function (dt) {
+  M.pre = function () {
     if (CR.state !== 'countdown') return;
     var cdEl = el('cd');
-    cdLeft -= dt;
-    var c = Math.ceil(cdLeft);
+    var c = Math.ceil((countdownEnd - performance.now()) / 1000);
     if (c > 0 && c !== lastCd) { lastCd = c; cdEl.hidden = false; cdEl.textContent = String(c); CR.tone(660, 0.1, 'sine', 0.07); }
-    if (cdLeft <= 0) {
+    if (c <= 0) {
       CR.state = 'play';
       cdEl.hidden = false; cdEl.textContent = 'GO!';
       CR.tone(990, 0.3, 'sine', 0.09);
