@@ -1,0 +1,21 @@
+# 每個 PR 與 main 的每次 push 都自動跑 Playwright 測試（用 runner 內建的 Chrome）。不經過任何 AI，不花 Claude 用量。
+# 來源：onholdlab/rules 的 templates/harness（2026-11-14）。
+name: test
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright test

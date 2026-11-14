@@ -1,0 +1,22 @@
+# 測試只能新增、harness 不能由 AI 自己改。檢查程式來自 main，PR 改不到它。
+# 來源：onholdlab/rules 的 templates/harness（2026-11-14）。
+name: test-guard
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+permissions:
+  contents: read
+jobs:
+  test-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # 只取 PR 的 commit 來比對差異，不執行 PR 裡的任何程式
+      - run: git fetch --no-tags origin "refs/pull/${{ github.event.pull_request.number }}/head"
+      - run: node .github/scripts/test-guard.mjs
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}

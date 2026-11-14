@@ -3,3 +3,5 @@ _source/
 node_modules/
 test-results/
 playwright-report/
+.claude/state/
+.claude/settings.local.json
